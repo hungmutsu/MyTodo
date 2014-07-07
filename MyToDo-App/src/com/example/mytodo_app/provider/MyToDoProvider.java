@@ -15,6 +15,9 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.example.mytodo_app.utils.CommonUtils;
+import com.example.mytodo_app.utils.Constant;
+
 /**
  * Created by Sony on 7/3/2014.
  */
@@ -53,6 +56,7 @@ public class MyToDoProvider extends ContentProvider {
     private static final int TASKS = 3;
     // The incoming URI matches the Task ID URI pattern
     private static final int TASK_ID = 4;
+    private static final int TASK_DRAFT = 5;
     /**
      * A UriMatcher instance
      */
@@ -89,6 +93,7 @@ public class MyToDoProvider extends ContentProvider {
         // Add a pattern that routes URIs terminated with "tasks" plus an integer
         // to a task ID operation
         sUriMatcher.addURI(MyToDo.AUTHORITY, "tasks/#", TASK_ID);
+        sUriMatcher.addURI(MyToDo.AUTHORITY, "tasks-draft/#", TASK_DRAFT);
 
     /*
      * Creates and initializes a projection map that returns all columns
@@ -112,6 +117,7 @@ public class MyToDoProvider extends ContentProvider {
         sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
         sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
         sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
+        sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, MyToDo.Tasks.COLUMN_NAME_IS_DRAFT);
     }
 
     /**
@@ -136,7 +142,7 @@ public class MyToDoProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
-        sortOrder = TextUtils.isEmpty(sortOrder) ? "_ID ASC" : sortOrder;
+        sortOrder = TextUtils.isEmpty(sortOrder) ? "_ID DESC" : sortOrder;
 
         // Constructs a new query builder and sets its table name
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
@@ -182,6 +188,15 @@ public class MyToDoProvider extends ContentProvider {
                         // the position of the note ID itself in the incoming URI
                         uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
                 break;
+                
+            case TASK_DRAFT:
+              qb.setTables(MyToDo.Tasks.TABLE_NAME);
+              qb.setProjectionMap(sTasksProjectionMap);
+              qb.appendWhere(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT + // the name of the ID column
+                      "=" + uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
+              Log.i(TAG, uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
+              break;
+              
             default:
                 // If the URI doesn't match any of the known patterns, throw an exception.
                 throw new IllegalArgumentException("Unknown URI " + uri);
@@ -231,6 +246,8 @@ public class MyToDoProvider extends ContentProvider {
                 return MyToDo.Tasks.CONTENT_TYPE;
             case TASK_ID:
                 return MyToDo.Tasks.CONTENT_ITEM_TYPE;
+            case TASK_DRAFT:
+                return MyToDo.Tasks.CONTENT_TYPE;
 
             // If the URI pattern doesn't match any permitted patterns, throws an exception.
             default:
@@ -283,29 +300,28 @@ public class MyToDoProvider extends ContentProvider {
                     return userUri;
                 }
             case TASKS:
-           // Gets the current system time in milliseconds
+              // Gets the current system time in milliseconds
               Long now = Long.valueOf(System.currentTimeMillis());
 
               // If the values map doesn't contain the creation date, sets the value to the current time.
               if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE) == false) {
-                values.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, now);
+                values.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, CommonUtils.getStringDate(now, Constant.DATE_TIME_FORMAT));
               }
 
               // If the values map doesn't contain the modification date, sets the value to the current
               // time.
               if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE) == false) {
-                values.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, now);
+                values.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, CommonUtils.getStringDate(now, Constant.DATE_TIME_FORMAT));
               }
               
               // If the values map doesn't contain the modification date, sets the value to the current time.
               if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE) == false) {
-                values.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, now);
+                values.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, "");
               }
 
               
               if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_ID) == false) {
-                Resources r = Resources.getSystem();
-                values.put(MyToDo.Tasks.COLUMN_NAME_ID, 1);
+                values.put(MyToDo.Tasks.COLUMN_NAME_ID, 0);
               }
 
               // If the values map doesn't contain a title, sets the value to the default title.
@@ -314,10 +330,12 @@ public class MyToDoProvider extends ContentProvider {
                 values.put(MyToDo.Tasks.COLUMN_NAME_NAME, r.getString(android.R.string.untitled));
               }
            // If the values map doesn't contain note text, sets the value to an empty string.
+              if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT) == false) {
+                values.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 0);
+              }
               if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION) == false) {
                 values.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, "");
               }
-              
                 // Performs the insert and returns the ID of the new note.
                 long taskId = db.insert(MyToDo.Tasks.TABLE_NAME, // The table to insert into.
                         null, // A hack, SQLite sets this column value to null

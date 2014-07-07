@@ -5,17 +5,17 @@
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_task_list">TaskListActivity</string>
     <string name="title_activity_task_editor">TaskEditorActivity</string>
+    <string name="title_activity_sign_up">SignUpActivity</string>
 
-    
-    <!-- LAYOUT LOGIN-->
-     <string name="username">Tên đăng nhập</string>
+    <!-- LAYOUT LOGIN -->
+    <string name="username">Tên đăng nhập</string>
     <string name="password">Mật khẩu</string>
     <string name="fullname">Họ tên</string>
     <string name="login">Đăng nhập</string>
     <string name="register">Đăng ký</string>
     <string name="link_to_register_screen">Bạn chưa có tài khoản? Đăng ký mới !</string>
     <string name="link_to_login_screen">Bạn đã có tài khoản? Đăng nhập !</string>
-    
+
     <!-- LAYOUT TASK EDITOR -->
     <string name="no_reminders"></string>
     <string name="task_name">Tên công việc</string>
@@ -26,12 +26,12 @@
     <string name="task_saved_message">Save task success</string>
     <string name="notify_new_task_message">A task needs to be reviewed!</string>
     <string name="notifiy_new_task_title">Task Reminder.</string>
-    
+
     <!-- MENU -->
     <string name="menu_insert">Thêm mới</string>
     <string name="menu_open">Chi tiết</string>
     <string name="menu_delete">Xóa</string>
     <string name="menu_edit">Cập nhật</string>
     <string name="menu_save">Lưu</string>
-    
+
 </resources>

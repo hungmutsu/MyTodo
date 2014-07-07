@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "mytodo.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 5;
 
     //Tạo bảng
     private static final String USER_TABLE_CREATE =
@@ -16,10 +16,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     MyToDo.Users.COLUMN_NAME_PASSWORD, MyToDo.Users.COLUMN_NAME_FULL_NAME);
 
     private static final String TASK_TABLE_CREATE =
-            String.format("CREATE TABLE %s ( %s INTEGER PRIMARY KEY AUTOINCREMENT,%s INTEGER,%s INTEGER, %s TEXT, %s TEXT, %s INTEGER, %s INTEGER, %s INTEGER)",
+            String.format("CREATE TABLE %s ( %s INTEGER PRIMARY KEY AUTOINCREMENT,%s INTEGER,%s INTEGER, %s TEXT, %s TEXT, %s TEXT, %s TEXT, %s TEXT, %s INTEGER)",
                     MyToDo.Tasks.TABLE_NAME, MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID, MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME,
                     MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
-                    MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
+                    MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, MyToDo.Tasks.COLUMN_NAME_IS_DRAFT);
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
