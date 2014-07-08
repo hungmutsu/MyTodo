@@ -138,7 +138,7 @@ public class MyToDo {
          */
         private static final String PATH_TASK_ID = "/tasks/";
         private static final String PATH_TASKS_DRAFT = "/tasks-draft/";
-
+        private static final String PATH_TASK_SERVER_ID = "/tasks-server/";
         /**
          * 0-relative position of a task ID segment in the path part of a task ID URI
          */
@@ -155,14 +155,17 @@ public class MyToDo {
          * append a numeric task id to this Uri to retrieve a task
          */
         public static final Uri CONTENT_ID_URI_BASE = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_ID);
+        public static final Uri CONTENT_SERVER_ID_URI_BASE =  Uri.parse(SCHEME + AUTHORITY + PATH_TASK_SERVER_ID);
         public static final Uri CONTENT_DRAP_URI_BASE =  Uri.parse(SCHEME + AUTHORITY + PATH_TASKS_DRAFT);
-
+        
         /**
          * The content URI match pattern for a single task, specified by its ID. Use this to match
          * incoming URIs or to construct an Intent.
          */
         public static final Uri CONTENT_ID_URI_PATTERN
                 = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_ID + "/#");
+        public static final Uri CONTENT_SERVER_ID_URI_PATTERN
+        = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_SERVER_ID + "/#");
         public static final Uri CONTENT_DRAP_URI_PATTERN =  Uri.parse(SCHEME + AUTHORITY + PATH_TASKS_DRAFT + "/#");
         /*
          * MIME type definitions

@@ -1,15 +1,8 @@
 package com.example.mytodo_app.utils;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -55,211 +48,211 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 public class NetworkUtils {
-	
-	public static boolean isOnline(Context context) {
-		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo netInfo = cm.getActiveNetworkInfo();
-		if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-			return true;
-		}
-		return false;
-	}
 
-	public static JSONObject getJSONFromUrl(String url) {
-		JSONObject jObj = null;
-		String json = "";
-		try {
-			// defaultHttpClient
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
-			httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
+  public static boolean isOnline(Context context) {
+    ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo netInfo = cm.getActiveNetworkInfo();
+    if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+      return true;
+    }
+    return false;
+  }
 
-			HttpGet httpGet = new HttpGet(url);
-			HttpResponse httpResponse = httpClient.execute(httpGet);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
-			jObj = new JSONObject(json);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jObj;
+  public static JSONObject getJSONFromUrl(String url) {
+    JSONObject jObj = null;
+    String json = "";
+    try {
+      // defaultHttpClient
+      DefaultHttpClient httpClient = new DefaultHttpClient();
+      httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
+      httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
 
-	}
+      HttpGet httpGet = new HttpGet(url);
+      HttpResponse httpResponse = httpClient.execute(httpGet);
+      HttpEntity httpEntity = httpResponse.getEntity();
+      json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
+      jObj = new JSONObject(json);
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    } catch (ClientProtocolException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+    return jObj;
 
-	public static JSONObject postJSONObjFromUrlTemp(String url, String[] key, String[] value) {
-		JSONObject jObj = null;
-		String json = "";
-		try {
-			// defaultHttpClient
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
-			httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
-			HttpPost httppost = new HttpPost(url);
+  }
 
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
-			for (int i = 0; i < value.length; i++) {
-				nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
-			}
-			httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-			HttpResponse httpResponse = httpClient.execute(httppost);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
-			jObj = new JSONObject(json);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jObj;
+  public static JSONObject postJSONObjFromUrlTemp(String url, String[] key, String[] value) {
+    JSONObject jObj = null;
+    String json = "";
+    try {
+      // defaultHttpClient
+      DefaultHttpClient httpClient = new DefaultHttpClient();
+      httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
+      httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
+      HttpPost httppost = new HttpPost(url);
 
-	}
+      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
+      for (int i = 0; i < value.length; i++) {
+        nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
+      }
+      httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+      HttpResponse httpResponse = httpClient.execute(httppost);
+      HttpEntity httpEntity = httpResponse.getEntity();
+      json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
+      jObj = new JSONObject(json);
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    } catch (ClientProtocolException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+    return jObj;
 
-	public static JSONArray postJSONListFromUrl(String url, String[] key, String[] value) {
-		JSONArray jObj = null;
-		String json = "";
-		try {
-			// defaultHttpClient
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
-			httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
-			HttpPost httppost = new HttpPost(url);
+  }
 
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
-			for (int i = 0; i < value.length; i++) {
-				nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
-			}
-			httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-			HttpResponse httpResponse = httpClient.execute(httppost);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
-			jObj = new JSONArray(json);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jObj;
+  public static JSONArray postJSONListFromUrl(String url, String[] key, String[] value) {
+    JSONArray jObj = null;
+    String json = "";
+    try {
+      // defaultHttpClient
+      DefaultHttpClient httpClient = new DefaultHttpClient();
+      httpClient.getParams().setParameter("http.protocol.version", HttpVersion.HTTP_1_1);
+      httpClient.getParams().setParameter("http.protocol.content-charset", "UTF-8");
+      HttpPost httppost = new HttpPost(url);
 
-	}
+      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
+      for (int i = 0; i < value.length; i++) {
+        nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
+      }
+      httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+      HttpResponse httpResponse = httpClient.execute(httppost);
+      HttpEntity httpEntity = httpResponse.getEntity();
+      json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
+      jObj = new JSONArray(json);
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    } catch (ClientProtocolException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+    return jObj;
 
-	public static JSONObject getJSONObjFromUrlSSL(String url) throws Exception {
-		JSONObject jObj = null;
-		try {
-			HttpGet httpGet = new HttpGet(url);
-			HttpResponse httpResponse;
+  }
 
-			KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-			trustStore.load(null, null);
+  public static JSONObject getJSONObjFromUrlSSL(String url) throws Exception {
+    JSONObject jObj = null;
+    try {
+      HttpGet httpGet = new HttpGet(url);
+      HttpResponse httpResponse;
 
-			SSLSocketFactory sf = new MySSLSocketFactory(trustStore);
-			sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+      KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      trustStore.load(null, null);
 
-			HttpParams params = new BasicHttpParams();
-			HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-			HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
+      SSLSocketFactory sf = new MySSLSocketFactory(trustStore);
+      sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
-			SchemeRegistry registry = new SchemeRegistry();
-			registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-			registry.register(new Scheme("https", sf, 443));
+      HttpParams params = new BasicHttpParams();
+      HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+      HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
 
-			ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
-			DefaultHttpClient httpClient = new DefaultHttpClient(ccm, params);
+      SchemeRegistry registry = new SchemeRegistry();
+      registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+      registry.register(new Scheme("https", sf, 443));
 
-			httpResponse = httpClient.execute(httpGet);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			String json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
-			jObj = new JSONObject(json);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return jObj;
-	}
+      ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
+      DefaultHttpClient httpClient = new DefaultHttpClient(ccm, params);
 
-	public static JSONObject postJSONObjFromUrl(String url, String[] key, String[] value) {
-		JSONObject jObj = null;
-		try {
-			HttpPost httpPost = new HttpPost(url);
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
-			for (int i = 0; i < value.length; i++) {
-				nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
-			}
-			httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+      httpResponse = httpClient.execute(httpGet);
+      HttpEntity httpEntity = httpResponse.getEntity();
+      String json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
+      jObj = new JSONObject(json);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return jObj;
+  }
 
-			HttpResponse httpResponse;
+  public static JSONObject postJSONObjFromUrl(String url, String[] key, String[] value) {
+    JSONObject jObj = null;
+    try {
+      HttpPost httpPost = new HttpPost(url);
+      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(value.length);
+      for (int i = 0; i < value.length; i++) {
+        nameValuePairs.add(new BasicNameValuePair(key[i], value[i]));
+      }
+      httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
-			KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-			trustStore.load(null, null);
+      HttpResponse httpResponse;
 
-			SSLSocketFactory sf = new MySSLSocketFactory(trustStore);
-			sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+      KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      trustStore.load(null, null);
 
-			HttpParams params = new BasicHttpParams();
-			HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-			HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
+      SSLSocketFactory sf = new MySSLSocketFactory(trustStore);
+      sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
-			SchemeRegistry registry = new SchemeRegistry();
-			registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-			registry.register(new Scheme("https", sf, 443));
+      HttpParams params = new BasicHttpParams();
+      HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+      HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
 
-			ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
-			DefaultHttpClient httpClient = new DefaultHttpClient(ccm, params);
+      SchemeRegistry registry = new SchemeRegistry();
+      registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+      registry.register(new Scheme("https", sf, 443));
 
-			httpResponse = httpClient.execute(httpPost);
-			HttpEntity httpEntity = httpResponse.getEntity();
-			String json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
-			jObj = new JSONObject(json);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return jObj;
-	}
+      ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
+      DefaultHttpClient httpClient = new DefaultHttpClient(ccm, params);
 
-	public static class MySSLSocketFactory extends SSLSocketFactory {
-		SSLContext sslContext = SSLContext.getInstance("TLS");
+      httpResponse = httpClient.execute(httpPost);
+      HttpEntity httpEntity = httpResponse.getEntity();
+      String json = EntityUtils.toString(httpEntity, HTTP.UTF_8);
+      jObj = new JSONObject(json);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return jObj;
+  }
 
-		public MySSLSocketFactory(KeyStore truststore) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
-			super(truststore);
+  public static class MySSLSocketFactory extends SSLSocketFactory {
+    SSLContext sslContext = SSLContext.getInstance("TLS");
 
-			TrustManager tm = new X509TrustManager() {
-				public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-				}
+    public MySSLSocketFactory(KeyStore truststore) throws NoSuchAlgorithmException, KeyManagementException,
+        KeyStoreException, UnrecoverableKeyException {
+      super(truststore);
 
-				public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-				}
+      TrustManager tm = new X509TrustManager() {
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
 
-				public X509Certificate[] getAcceptedIssuers() {
-					return null;
-				}
-			};
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
 
-			sslContext.init(null, new TrustManager[] { tm }, null);
-		}
+        public X509Certificate[] getAcceptedIssuers() {
+          return null;
+        }
+      };
 
-		@Override
-		public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-			return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-		}
+      sslContext.init(null, new TrustManager[] { tm }, null);
+    }
 
-		@Override
-		public Socket createSocket() throws IOException {
-			return sslContext.getSocketFactory().createSocket();
-		}
-	}
+    @Override
+    public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException,
+        UnknownHostException {
+      return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+    }
 
-
+    @Override
+    public Socket createSocket() throws IOException {
+      return sslContext.getSocketFactory().createSocket();
+    }
+  }
 
 }

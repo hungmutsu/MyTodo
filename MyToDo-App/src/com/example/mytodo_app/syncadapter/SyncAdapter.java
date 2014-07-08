@@ -44,7 +44,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     String updatedDate = getUpdatedDate(contentProviderClient);
     try {
       syncToLocal(account, contentProviderClient, updatedDate);
-      syncToServer(contentProviderClient);
+      syncToServer(account, contentProviderClient);
     } catch (RemoteException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -59,6 +59,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
    */
   public void syncToLocal(Account account, ContentProviderClient contentProviderClient, String updated)
       throws RemoteException {
+    Log.i(TAG, "begin sync to local");
     String urlGetAllTask = URL_HOST + "get-all-task.php";
 
     // Building Parameters
@@ -66,16 +67,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     String[] values = new String[] { account.name, updated };
 
     try {
-
+      Log.i(TAG, "Last updatedDate : " + updated);
       JSONObject json = NetworkUtils.postJSONObjFromUrl(urlGetAllTask, keys, values);
 
       // check your log for json response
-      Log.d("All task result", json.toString());
+      Log.d("All task server result", json.toString());
 
       // json success tag
       boolean error = json.getBoolean(TAG_ERROR);
 
-      Log.i(TAG, String.valueOf(error));
       if (!error) {
 
         JSONArray arrTask = json.getJSONArray("task");
@@ -105,10 +105,26 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
           contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
 
-          Log.i(TAG, "Inserting task");
-          contentProviderClient.insert(MyToDo.Tasks.CONTENT_URI, contentValues);
-          Log.i(TAG, "Inserted task");
+          // Kiểm tra tồn tại task?
+          Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_SERVER_ID_URI_BASE,
+              jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID));
+          Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
 
+          if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            Log.i(TAG, "Count Cursor : " + cursor.getCount());
+            // Local taskId
+            int id = cursor.getInt(cursor.getColumnIndex(MyToDo.Tasks._ID));
+            // Thực hiện update
+            Uri updateUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
+            Log.i(TAG, updateUri.toString());
+            contentProviderClient.update(updateUri, contentValues, null, null);
+          } else {
+            // Thực hiện insert
+            Log.i(TAG, "Inserting task");
+            contentProviderClient.insert(MyToDo.Tasks.CONTENT_URI, contentValues);
+            Log.i(TAG, "Inserted task");
+          }
         }
 
       } else {
@@ -118,6 +134,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     } catch (JSONException e) {
       e.printStackTrace();
     }
+    Log.i(TAG, "end sync to local");
   }
 
   /**
@@ -142,18 +159,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   }
 
   /**
-   * 
    * @param contentProviderClient
    */
-  private void syncToServer(ContentProviderClient contentProviderClient) {
-    String urlGetAllTask = URL_HOST + "add-task.php";
+  private void syncToServer(Account account, ContentProviderClient contentProviderClient) {
+    Log.i(TAG, "begin sync to server");
+    String urlAddTask = URL_HOST + "add-task.php";
     // Building Parameters
-    String[] keys = new String[] { "userId", "name", "description", "reminderDate", "createdDate", "updatedDate" };
+    String[] keys = new String[] { "username", "name", "description", "reminderDate", "createdDate", "updatedDate" };
 
     try {
       Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_DRAP_URI_BASE, "0");
       Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
+      Log.i(TAG, "Uri query draf : " + uri.toString());
+
       if (cursor.getCount() > 0) {
+        Log.i(TAG, "Count cursor : " + cursor.getCount());
         cursor.moveToFirst();
         int colIdIndex = cursor.getColumnIndex(MyToDo.Tasks._ID);
         // int colTaskIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID);
@@ -164,7 +184,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         int colCreatedDateIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
         int colUpdatedDateIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
 
-        while (cursor.moveToNext()) {
+        do {
           int id = cursor.getInt(colIdIndex);
           int userId = cursor.getInt(colUserIdIndex);
           String name = cursor.getString(colNameIndex);
@@ -173,12 +193,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
           String createdDate = cursor.getString(colCreatedDateIndex);
           String updatedDate = cursor.getString(colUpdatedDateIndex);
 
-          String[] values = new String[] { String.valueOf(userId), name, description, reminderDate, createdDate,
-              updatedDate };
+          String[] values = new String[] { account.name, name, description, reminderDate, createdDate, updatedDate };
 
-          JSONObject json = NetworkUtils.postJSONObjFromUrl(urlGetAllTask, keys, values);
+          JSONObject json = NetworkUtils.postJSONObjFromUrl(urlAddTask, keys, values);
           // check your log for json response
-          Log.d("All task result", json.toString());
+          Log.d("task add result", json.toString());
 
           // json success tag
           boolean error = json.getBoolean(TAG_ERROR);
@@ -202,7 +221,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
           } else {
             Log.i(TAG, json.getString("message"));
           }
-        }
+        } while (cursor.moveToNext());
 
       }
     } catch (RemoteException e) {
@@ -212,6 +231,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+    Log.i(TAG, "end sync to server");
   }
 
 }

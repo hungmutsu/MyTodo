@@ -8,7 +8,6 @@ import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -29,10 +28,9 @@ public class MainActivity extends AccountAuthenticatorActivity {
   private static final String URL_HOST = "http://192.168.1.77/mytodo-service/";
   public static final String JSON_TAG_ERROR = "error";
   // Sync interval constants
-  public static final long MILLISECONDS_PER_SECOND = 1000L;
   public static final long SECONDS_PER_MINUTE = 60L;
-  public static final long SYNC_INTERVAL_IN_MINUTES = 5L;
-  public static final long SYNC_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE * MILLISECONDS_PER_SECOND;
+  public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
+  public static final long SYNC_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
 
   EditText loginName, loginPassword;
   TextView loginError;
@@ -41,18 +39,25 @@ public class MainActivity extends AccountAuthenticatorActivity {
   // Progress Dialog
   private ProgressDialog pDialog;
   // A content resolver for accessing the provider
-  ContentResolver mResolver;
+  static ContentResolver mResolver;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    mResolver = getContentResolver();
+
     // Check exist account
     AccountManager accountManager = AccountManager.get(this);
     Account[] accounts = accountManager.getAccountsByType(Constant.ACCOUNT_TYPE);
+    Log.i(TAG, "account length" + accounts.length);
+    // Log.i(TAG, "account name" + accounts[0].name);
     if (accounts.length > 0) {
       // Chuyen thang den TaskList
+
+      // Turn on automatic syncing for the default account and authority
+      // mResolver.setSyncAutomatically(accounts[0], MyToDo.AUTHORITY, true);
       Intent i = new Intent(MainActivity.this, TaskListActivity.class);
       startActivity(i);
       finish();
@@ -110,7 +115,6 @@ public class MainActivity extends AccountAuthenticatorActivity {
 
       // Check for success tag
       boolean error;
-      System.out.println(loginPassword.getText().toString());
 
       String username = loginName.getText().toString();
       String password = loginPassword.getText().toString();
@@ -131,7 +135,7 @@ public class MainActivity extends AccountAuthenticatorActivity {
         if (!error) {
 
           // get first User object from JSON Array
-          JSONObject userObj = json.getJSONArray("user").getJSONObject(0); // JSON Array
+          // JSONObject userObj = json.getJSONArray("user").getJSONObject(0); // JSON Array
 
           Bundle result = null;
           Account account = new Account(username, Constant.ACCOUNT_TYPE);
@@ -142,17 +146,20 @@ public class MainActivity extends AccountAuthenticatorActivity {
             result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
             result.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
             setAccountAuthenticatorResult(result);
+
             /*
              * Turn on periodic syncing
              */
-            ContentResolver.addPeriodicSync(account, MyToDo.AUTHORITY, null, SYNC_INTERVAL);
+            ContentResolver.setSyncAutomatically(account, MyToDo.AUTHORITY, true);
+
+            ContentResolver.addPeriodicSync(account, MyToDo.AUTHORITY, new Bundle(), SYNC_INTERVAL);
             return true;
           } else {
             Log.i("LOGIN", "TON TAI");
             return false;
           }
         } else {
-          loginError.setText("Incorrect username/password");
+          loginError.setText(json.getString("message"));
           return false;
         }
       } catch (JSONException e) {

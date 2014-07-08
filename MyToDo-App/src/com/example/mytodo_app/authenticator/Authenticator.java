@@ -9,54 +9,53 @@ import android.os.Bundle;
 
 public class Authenticator extends AbstractAccountAuthenticator {
 
-    public Authenticator(Context context) {
-        super(context);
-    }
+  public Authenticator(Context context) {
+    super(context);
+  }
 
-    @Override
-    public Bundle editProperties(AccountAuthenticatorResponse accountAuthenticatorResponse,
-        String s) {
+  @Override
+  public Bundle editProperties(AccountAuthenticatorResponse accountAuthenticatorResponse, String s) {
 
-        throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public Bundle addAccount(AccountAuthenticatorResponse accountAuthenticatorResponse, String s,
-        String s2, String[] strings, Bundle bundle) throws NetworkErrorException {
+  @Override
+  public Bundle addAccount(AccountAuthenticatorResponse accountAuthenticatorResponse, String s, String s2,
+      String[] strings, Bundle bundle) throws NetworkErrorException {
 
-        return null;
-    }
+    return null;
+  }
 
-    @Override
-    public Bundle confirmCredentials(AccountAuthenticatorResponse accountAuthenticatorResponse,
-        Account account, Bundle bundle) throws NetworkErrorException {
+  @Override
+  public Bundle confirmCredentials(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account,
+      Bundle bundle) throws NetworkErrorException {
 
-        return null;
-    }
+    return null;
+  }
 
-    @Override
-    public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse,
-        Account account, String s, Bundle bundle) throws NetworkErrorException {
+  @Override
+  public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String s,
+      Bundle bundle) throws NetworkErrorException {
 
-        throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public String getAuthTokenLabel(String s) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public String getAuthTokenLabel(String s) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public Bundle updateCredentials(AccountAuthenticatorResponse accountAuthenticatorResponse,
-        Account account, String s, Bundle bundle) throws NetworkErrorException {
+  @Override
+  public Bundle updateCredentials(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String s,
+      Bundle bundle) throws NetworkErrorException {
 
-        throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public Bundle hasFeatures(AccountAuthenticatorResponse accountAuthenticatorResponse,
-        Account account, String[] strings) throws NetworkErrorException {
+  @Override
+  public Bundle hasFeatures(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String[] strings)
+      throws NetworkErrorException {
 
-        throw new UnsupportedOperationException();
-    }
+    throw new UnsupportedOperationException();
+  }
 }
