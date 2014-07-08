@@ -160,7 +160,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
    */
   private void syncToServer(Account account, ContentProviderClient contentProviderClient) {
     Log.i(TAG, "begin sync to server");
-    String urlAddTask = URL_HOST + "add-task.php";
+    String urlSyncTask = "";
     // Building Parameters
     String[] keys = new String[] { "username", "name", "description", "reminderDate", "createdDate", "updatedDate" };
 
@@ -173,8 +173,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         Log.i(TAG, "Count cursor : " + cursor.getCount());
         cursor.moveToFirst();
         int colIdIndex = cursor.getColumnIndex(MyToDo.Tasks._ID);
-        // int colTaskIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID);
-        int colUserIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_USER_ID);
+        int colTaskIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID);
+//        int colUserIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_USER_ID);
         int colNameIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_NAME);
         int colDescriptionIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION);
         int colReminderIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
@@ -182,17 +182,26 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         int colUpdatedDateIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
 
         do {
-          int id = cursor.getInt(colIdIndex);
-          int userId = cursor.getInt(colUserIdIndex);
+          long id = cursor.getLong(colIdIndex);
+          long taskId = cursor.getLong(colTaskIdIndex);
+//          long userId = cursor.getLong(colUserIdIndex);
           String name = cursor.getString(colNameIndex);
           String description = cursor.getString(colDescriptionIndex);
           String reminderDate = cursor.getString(colReminderIndex);
           String createdDate = cursor.getString(colCreatedDateIndex);
           String updatedDate = cursor.getString(colUpdatedDateIndex);
 
-          String[] values = new String[] { account.name, name, description, reminderDate, createdDate, updatedDate };
-
-          JSONObject json = NetworkUtils.postJSONObjFromUrl(urlAddTask, keys, values);
+          String[] values = new String[] { account.name, String.valueOf(taskId), name, description, reminderDate, createdDate, updatedDate };
+          
+          String urlGetTaskDetail = URL_HOST + "get-task-detail.php?taskId="+taskId;
+          JSONObject taskDetail = NetworkUtils.getJSONFromUrl(urlGetTaskDetail);
+          if(taskDetail.getBoolean(TAG_ERROR)) {
+            urlSyncTask = URL_HOST + "add-task.php";
+          } else {
+            urlSyncTask = URL_HOST + "update-task.php";
+          }
+          
+          JSONObject json = NetworkUtils.postJSONObjFromUrl(urlSyncTask, keys, values);
           // check your log for json response
           Log.d("task add result", json.toString());
 
@@ -207,7 +216,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
               JSONObject jsonObject = arrTask.getJSONObject(i);
 
               contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
-              contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
+              // TODO contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
               Log.i(TAG, "Updating task : " + id);
 
               Uri updateUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
