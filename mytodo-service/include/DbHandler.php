@@ -64,7 +64,7 @@ class DbHandler {
      */
     public function checkLogin($email, $password) {
         // fetching user by email
-        $stmt = $this->conn->prepare("SELECT uid FROM users WHERE username = ? and password = ?");
+        $stmt = $this->conn->prepare("SELECT userId FROM users WHERE username = ? and password = ?");
 
         $stmt->bind_param("ss", $email, $password);
 
@@ -95,7 +95,7 @@ class DbHandler {
      * @return boolean
      */
     private function isUserExists($email) {
-        $stmt = $this->conn->prepare("SELECT uid from users WHERE username = ?");
+        $stmt = $this->conn->prepare("SELECT userId from users WHERE username = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
@@ -109,14 +109,14 @@ class DbHandler {
      * @param String $email User email id
      */
     public function getUserByEmail($email) {
-        $stmt = $this->conn->prepare("SELECT uid, username, password, fullname FROM users WHERE username = ?");
+        $stmt = $this->conn->prepare("SELECT userId, username, password, fullname FROM users WHERE username = ?");
         $stmt->bind_param("s", $email);
         if ($stmt->execute()) {
             // $user = $stmt->get_result()->fetch_assoc();
             $stmt->bind_result($uid, $username, $password, $fullname);
             $stmt->fetch();
             $user = array();
-            $user["uid"] = $uid;
+            $user["userId"] = $uid;
             $user["username"] = $username;
             $user["password"] = $password;
             $user["fullname"] = $fullname;
@@ -135,12 +135,18 @@ class DbHandler {
      * @param String $user_id user id to whom task belongs to
      * @param String $task task text
      */
-    public function createTask($user_id, $name, $description, $reminderDate) {
+    public function createTask($user_id, $name, $description, $reminderDate, $createdDate, $updatedDate) {
         $dateTime = new DateTime("now");
-        $createDate = $dateTime->format("Y-m-d H:i:s");
+        if($createdDate == NULL || $createdDate == "") {
+            $createdDate = $dateTime->format("Y-m-d H:i:s");    
+        }
+        if($updatedDate == NULL)
+        {
+            $updatedDate = $dateTime->format("Y-m-d H:i:s");
+        }
         
-        $stmt = $this->conn->prepare("INSERT INTO tasks(uid, name, description, reminderDate, createDate) VALUES(?,?,?,?,?)");
-        $stmt->bind_param("issss", $user_id, $name, $description, $reminderDate, $createDate);
+        $stmt = $this->conn->prepare("INSERT INTO tasks(userId, name, description, reminderDate, createdDate,updatedDate) VALUES(?,?,?,?,?,?)");
+        $stmt->bind_param("isssss", $user_id, $name, $description, $reminderDate, $createdDate, $updatedDate);
         $result = $stmt->execute();
         $stmt->close();
 
@@ -158,7 +164,7 @@ class DbHandler {
      * @param String $task_id id of the task
      */
     public function getTask($task_id) {
-        $stmt = $this->conn->prepare("SELECT tid, uid, name, description, reminderDate, createDate, updateDate FROM tasks WHERE tid = ?");
+        $stmt = $this->conn->prepare("SELECT taskId, userId, name, description, reminderDate, createdDate, updatedDate FROM tasks WHERE taskId = ?");
         $stmt->bind_param("i", $task_id);
         if ($stmt->execute()) {
             $res = array();
@@ -166,13 +172,13 @@ class DbHandler {
             // TODO
             // $task = $stmt->get_result()->fetch_assoc();
             $stmt->fetch();
-            $res["tid"] = $tid;
-            $res["uid"] = $uid;
+            $res["taskId"] = $tid;
+            $res["userId"] = $uid;
             $res["name"] = $name;
             $res["description"] = $description;
             $res["reminderDate"] = $reminderDate;
-            $res["createDate"] = $createDate;
-            $res["updateDate"] = $updateDate;
+            $res["createdDate"] = $createDate;
+            $res["updatedDate"] = $updateDate;
             $stmt->close();
             return $res;
         } else {
@@ -182,27 +188,57 @@ class DbHandler {
 
     /**
      * Fetching all user tasks
-     * @param String $user_id id of the user
+     * @param String $userId id of the user
      */
-    public function getAllUserTasks($user_id) {
-        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE uid = ?");
-        $stmt->bind_param("i", $user_id);
+    public function getTasksByUserId($userId) {
+        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE userId = ?");
+        $stmt->bind_param("i", $userId);
         $stmt->execute();
         $tasks = $stmt->get_result();
         $stmt->close();
         return $tasks;
     }
 
+    public function getTasksByUserIdAndUpdatedDate ($userId, $updatedDate) {
+        if($updatedDate == NULL || $updatedDate == ""){
+            $updatedDate = new DateTime("now");
+        } else {
+            $updatedDate = new DateTime($updatedDate);
+        }
+        
+        $update = $updatedDate->format("Y-m-d H:i:s");
+        $stmt = $this->conn->prepare("SELECT * FROM tasks WHERE userId = ? and updatedDate > ?");
+        $stmt->bind_param("is", $userId, $update);
+        $stmt->execute();
+        $tasks = $stmt->get_result();
+        $stmt->close();
+        return $tasks;
+    }
+    
     /**
      * Updating task
      * @param String $task_id id of the task
      * @param String $task task text
      * @param String $status task status
      */
-    public function updateTask($task_id, $name, $description, $reminderDate) {
+    public function updateTask($task_id, $name, $description, $reminderDate, $updatedDate ) {
+        
+        if($updatedDate == NULL || $updatedDate == ""){
+            $updatedDate = new DateTime("now");
+        } else {
+            $updatedDate = new DateTime($updatedDate);
+        }
+        if($reminderDate == NULL || $reminderDate == "") {
+            $reminderDate = new DateTime("now");
+        } else {
+            $reminderDate = new DateTime($reminderDate);
+        }
+        
         $reminderDateFormat = $reminderDate->format("Y-m-d H:i:s");
-        $stmt = $this->conn->prepare("UPDATE tasks set name = ?, description = ?, reminderDate = ? WHERE tid = ?");
-        $stmt->bind_param("sssi", $name, $description, $reminderDateFormat, $task_id);
+        $updatedDateFormat = $updatedDate->format("Y-m-d H:i:s");
+        
+        $stmt = $this->conn->prepare("UPDATE tasks SET name = ?, description = ?, reminderDate = ? and updatedDate = ? WHERE taskId = ?");
+        $stmt->bind_param("ssssi", $name, $description, $reminderDateFormat, $updatedDateFormat, $task_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;
         $stmt->close();
@@ -214,7 +250,7 @@ class DbHandler {
      * @param String $task_id id of the task to delete
      */
     public function deleteTask($task_id) {
-        $stmt = $this->conn->prepare("DELETE FROM tasks tid = ?");
+        $stmt = $this->conn->prepare("DELETE FROM tasks taskId = ?");
         $stmt->bind_param("i", $task_id);
         $stmt->execute();
         $num_affected_rows = $stmt->affected_rows;

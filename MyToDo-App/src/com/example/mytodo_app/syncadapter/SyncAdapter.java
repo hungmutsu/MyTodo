@@ -42,13 +42,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     Log.i(TAG, "starting sync");
 
     String updatedDate = getUpdatedDate(contentProviderClient);
-    try {
-      syncToLocal(account, contentProviderClient, updatedDate);
-      syncToServer(account, contentProviderClient);
-    } catch (RemoteException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    syncToLocal(account, contentProviderClient, updatedDate);
+    syncToServer(account, contentProviderClient);
+
     Log.i(TAG, "done sync");
 
   }
@@ -57,8 +53,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
    * @param contentProviderClient
    * @throws RemoteException
    */
-  public void syncToLocal(Account account, ContentProviderClient contentProviderClient, String updated)
-      throws RemoteException {
+  public void syncToLocal(Account account, ContentProviderClient contentProviderClient, String updated) {
     Log.i(TAG, "begin sync to local");
     String urlGetAllTask = URL_HOST + "get-all-task.php";
 
@@ -69,69 +64,71 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     try {
       Log.i(TAG, "Last updatedDate : " + updated);
       JSONObject json = NetworkUtils.postJSONObjFromUrl(urlGetAllTask, keys, values);
+      if (json != null) {
+        // check your log for json response
+        Log.d("All task server result", json.toString());
 
-      // check your log for json response
-      Log.d("All task server result", json.toString());
+        // json success tag
+        boolean error = json.getBoolean(TAG_ERROR);
 
-      // json success tag
-      boolean error = json.getBoolean(TAG_ERROR);
+        if (!error) {
 
-      if (!error) {
+          JSONArray arrTask = json.getJSONArray("task");
+          for (int i = 0; i < arrTask.length(); i++) {
 
-        JSONArray arrTask = json.getJSONArray("task");
-        for (int i = 0; i < arrTask.length(); i++) {
+            ContentValues contentValues = new ContentValues();
+            JSONObject jsonObject = arrTask.getJSONObject(i);
 
-          ContentValues contentValues = new ContentValues();
-          JSONObject jsonObject = arrTask.getJSONObject(i);
+            contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
+            contentValues.put(MyToDo.Tasks.COLUMN_NAME_NAME, jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_NAME));
+            contentValues.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
+                jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION));
 
-          contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
-          contentValues.put(MyToDo.Tasks.COLUMN_NAME_NAME, jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_NAME));
-          contentValues.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
-              jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION));
+            String reminder = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
+            String createdDate = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
+            String updatedDate = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
 
-          String reminder = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
-          String createdDate = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
-          String updatedDate = jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
+            if (StringUtils.isNotBlank(reminder) && !"0000-00-00 00:00:00".equals(reminder)) {
+              contentValues.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, reminder);
+            }
+            if (StringUtils.isNotBlank(createdDate)) {
+              contentValues.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, createdDate);
+            }
+            if (StringUtils.isNotBlank(updatedDate)) {
+              contentValues.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, updatedDate);
+            }
 
-          if (StringUtils.isNotBlank(reminder) && !"0000-00-00 00:00:00".equals(reminder)) {
-            contentValues.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, reminder);
+            contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
+
+            // Kiểm tra tồn tại task?
+            Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_SERVER_ID_URI_BASE,
+                jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID));
+            Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
+
+            if (cursor.getCount() > 0) {
+              cursor.moveToFirst();
+              Log.i(TAG, "Count Cursor : " + cursor.getCount());
+              // Local taskId
+              int id = cursor.getInt(cursor.getColumnIndex(MyToDo.Tasks._ID));
+              // Thực hiện update
+              Uri updateUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
+              Log.i(TAG, updateUri.toString());
+              contentProviderClient.update(updateUri, contentValues, null, null);
+            } else {
+              // Thực hiện insert
+              Log.i(TAG, "Inserting task");
+              contentProviderClient.insert(MyToDo.Tasks.CONTENT_URI, contentValues);
+              Log.i(TAG, "Inserted task");
+            }
           }
-          if (StringUtils.isNotBlank(createdDate)) {
-            contentValues.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, createdDate);
-          }
-          if (StringUtils.isNotBlank(updatedDate)) {
-            contentValues.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, updatedDate);
-          }
-
-          contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
-
-          // Kiểm tra tồn tại task?
-          Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_SERVER_ID_URI_BASE,
-              jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID));
-          Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
-
-          if (cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            Log.i(TAG, "Count Cursor : " + cursor.getCount());
-            // Local taskId
-            int id = cursor.getInt(cursor.getColumnIndex(MyToDo.Tasks._ID));
-            // Thực hiện update
-            Uri updateUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
-            Log.i(TAG, updateUri.toString());
-            contentProviderClient.update(updateUri, contentValues, null, null);
-          } else {
-            // Thực hiện insert
-            Log.i(TAG, "Inserting task");
-            contentProviderClient.insert(MyToDo.Tasks.CONTENT_URI, contentValues);
-            Log.i(TAG, "Inserted task");
-          }
+        } else {
+          Log.i(TAG, json.getString("message"));
         }
-
-      } else {
-        Log.i(TAG, json.getString("message"));
-
       }
+
     } catch (JSONException e) {
+      e.printStackTrace();
+    } catch (RemoteException e) {
       e.printStackTrace();
     }
     Log.i(TAG, "end sync to local");
