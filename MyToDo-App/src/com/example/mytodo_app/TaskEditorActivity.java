@@ -416,9 +416,9 @@ public class TaskEditorActivity extends Activity {
       }
     });
 
-    /*
-     * tvDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
-     * tvTime.setText(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
-     */
+    
+     tvDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
+     tvTime.setText(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
+     
   }
 }

@@ -29,7 +29,7 @@ public class MainActivity extends AccountAuthenticatorActivity {
   public static final String JSON_TAG_ERROR = "error";
   // Sync interval constants
   public static final long SECONDS_PER_MINUTE = 60L;
-  public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
+  public static final long SYNC_INTERVAL_IN_MINUTES = 5L;
   public static final long SYNC_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
 
   EditText loginName, loginPassword;
