@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -34,7 +35,8 @@ public class MyToDoProvider extends ContentProvider {
   // The incoming URI matches the Task ID URI pattern
   private static final int TASK_ID = 2;
   private static final int TASK_SERVER_ID = 3;
-  private static final int TASK_DRAFT = 4;
+  private static final int TASK_DRAFTS = 4;
+  private static final int TASK_DRAFT_ID = 5;
 
   /**
    * A UriMatcher instance
@@ -44,6 +46,13 @@ public class MyToDoProvider extends ContentProvider {
    * A projection map used to select columns from the database
    */
   private static HashMap<String, String> sTasksProjectionMap;
+  private static HashMap<String, String> sTaskDraftsProjectionMap;
+
+  private static String[] READ_TASK_PROJECTION = { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
+      MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
+      MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
+      MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
+
   // Handle to a new DatabaseHelper.
   private DatabaseHelper mOpenHelper;
 
@@ -64,8 +73,9 @@ public class MyToDoProvider extends ContentProvider {
     // Add a pattern that routes URIs terminated with "tasks" plus an integer
     // to a task ID operation
     sUriMatcher.addURI(MyToDo.AUTHORITY, "tasks/#", TASK_ID);
-    sUriMatcher.addURI(MyToDo.AUTHORITY, "tasks-draft/#", TASK_DRAFT);
     sUriMatcher.addURI(MyToDo.AUTHORITY, "tasks-server/#", TASK_SERVER_ID);
+    sUriMatcher.addURI(MyToDo.AUTHORITY, "task-drafts", TASK_DRAFTS);
+    sUriMatcher.addURI(MyToDo.AUTHORITY, "task-drafts/#", TASK_DRAFT_ID);
 
     /*
      * Creates and initializes a projection map that returns all columns
@@ -82,7 +92,17 @@ public class MyToDoProvider extends ContentProvider {
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
-    sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, MyToDo.Tasks.COLUMN_NAME_IS_DRAFT);
+
+    sTaskDraftsProjectionMap = new HashMap<String, String>();
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts._ID, MyToDo.TaskDrafts._ID);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_ID);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_USER_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_NAME, MyToDo.TaskDrafts.COLUMN_NAME_NAME);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION, MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE, MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, MyToDo.TaskDrafts.COLUMN_NAME_STATUS);
   }
 
   /**
@@ -108,7 +128,7 @@ public class MyToDoProvider extends ContentProvider {
   @Override
   public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
-    sortOrder = TextUtils.isEmpty(sortOrder) ? "_ID DESC" : sortOrder;
+    sortOrder = TextUtils.isEmpty(sortOrder) ? MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE + " DESC" : sortOrder;
 
     // Constructs a new query builder and sets its table name
     SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
@@ -143,12 +163,22 @@ public class MyToDoProvider extends ContentProvider {
           // the position of the note ID itself in the incoming URI
           uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
       break;
+    case TASK_DRAFTS:
+      qb.setTables(MyToDo.TaskDrafts.TABLE_NAME);
+      qb.setProjectionMap(sTaskDraftsProjectionMap);
+      break;
 
-    case TASK_DRAFT:
-      qb.setTables(MyToDo.Tasks.TABLE_NAME);
-      qb.setProjectionMap(sTasksProjectionMap);
-      qb.appendWhere(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT + // the name of the ID column
-          "=" + uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
+    /*
+     * If the incoming URI is for a single note identified by its ID, chooses the note ID projection, and appends
+     * "_ID = <TASK_ID>" to the where clause, so that it selects that single note
+     */
+    case TASK_DRAFT_ID:
+      qb.setTables(MyToDo.TaskDrafts.TABLE_NAME);
+      qb.setProjectionMap(sTaskDraftsProjectionMap);
+      qb.appendWhere(MyToDo.TaskDrafts._ID + // the name of the ID column
+          "=" +
+          // the position of the note ID itself in the incoming URI
+          uri.getPathSegments().get(MyToDo.TaskDrafts.TASK_DRAFT_ID_PATH_POSITION));
       break;
 
     default:
@@ -199,8 +229,10 @@ public class MyToDoProvider extends ContentProvider {
       return MyToDo.Tasks.CONTENT_ITEM_TYPE;
     case TASK_SERVER_ID:
       return MyToDo.Tasks.CONTENT_ITEM_TYPE;
-    case TASK_DRAFT:
-      return MyToDo.Tasks.CONTENT_TYPE;
+    case TASK_DRAFTS:
+      return MyToDo.TaskDrafts.CONTENT_TYPE;
+    case TASK_DRAFT_ID:
+      return MyToDo.TaskDrafts.CONTENT_ITEM_TYPE;
 
       // If the URI pattern doesn't match any permitted patterns, throws an exception.
     default:
@@ -252,20 +284,12 @@ public class MyToDoProvider extends ContentProvider {
       if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE) == false) {
         values.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, "");
       }
-
-      if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_ID) == false) {
-        values.put(MyToDo.Tasks.COLUMN_NAME_ID, 0);
-      }
-
       // If the values map doesn't contain a title, sets the value to the default title.
       if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_NAME) == false) {
         Resources r = Resources.getSystem();
         values.put(MyToDo.Tasks.COLUMN_NAME_NAME, r.getString(android.R.string.untitled));
       }
-      // If the values map doesn't contain note text, sets the value to an empty string.
-      if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT) == false) {
-        values.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 0);
-      }
+
       if (values.containsKey(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION) == false) {
         values.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, "");
       }
@@ -279,6 +303,21 @@ public class MyToDoProvider extends ContentProvider {
 
       // If the insert succeeded, the row ID exists.
       if (taskId > 0) {
+        // Insert to task_draft
+        Cursor cursor = db.query(MyToDo.Tasks.TABLE_NAME, READ_TASK_PROJECTION, MyToDo.Tasks._ID + " = ?",
+            new String[] { String.valueOf(taskId) }, null, null, null, "1");
+
+        ContentValues taskDraftValues;
+        if (cursor.moveToFirst() && cursor.getLong(cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID)) == 0) {
+
+          taskDraftValues = new ContentValues();
+          DatabaseUtils.cursorRowToContentValues(cursor, taskDraftValues);
+
+          db.insert(MyToDo.TaskDrafts.TABLE_NAME, null, taskDraftValues);
+        }
+
+        cursor.close();
+
         // Creates a URI with the note ID pattern and the new row ID appended to it.
         Uri taskUri = ContentUris.withAppendedId(MyToDo.Tasks.CONTENT_ID_URI_BASE, taskId);
 
@@ -333,7 +372,7 @@ public class MyToDoProvider extends ContentProvider {
        */
       finalWhere = MyToDo.Tasks._ID + // The ID column name
           " = " + // test for equality
-          uri.getPathSegments(). // the incoming note ID
+          uri.getPathSegments(). // the incoming task ID
               get(MyToDo.Tasks.TASK_ID_PATH_POSITION);
 
       // If there were additional selection criteria, append them to the final
@@ -342,11 +381,59 @@ public class MyToDoProvider extends ContentProvider {
         finalWhere = finalWhere + " AND " + where;
       }
 
+      // Get dữ liểu để insert vào bảng drafs
+      Cursor cursor = db.query(MyToDo.Tasks.TABLE_NAME, READ_TASK_PROJECTION, MyToDo.Tasks._ID + " = ?",
+          new String[] { String.valueOf(uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION)) }, null, null,
+          null, "1");
+
+      Log.i(TAG, "TaskId truoc delete : " + cursor.getCount());
       // Performs the delete.
       count = db.delete(MyToDo.Tasks.TABLE_NAME, // The database table name.
           finalWhere, // The final WHERE clause
           whereArgs // The incoming where clause values.
           );
+//      Log.i(TAG, "TaskId sau delete : " + cursor.getInt(cursor.getColumnIndex(MyToDo.Tasks._ID)));
+      if (count > 0) {
+        // Insert to task_draft
+
+        ContentValues taskDraftValues;
+        if (cursor.moveToFirst()) {
+          Log.i(TAG, "Insert task draft : " + cursor.getInt(cursor.getColumnIndex(MyToDo.Tasks._ID)));
+          taskDraftValues = new ContentValues();
+          DatabaseUtils.cursorRowToContentValues(cursor, taskDraftValues);
+          taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_DELETE);
+          db.insert(MyToDo.TaskDrafts.TABLE_NAME, null, taskDraftValues);
+        }
+
+        cursor.close();
+      }
+
+      break;
+    case TASK_DRAFTS:
+      count = db.delete(MyToDo.TaskDrafts.TABLE_NAME, where, whereArgs);
+
+      break;
+
+    case TASK_DRAFT_ID:
+      /*
+       * Starts a final WHERE clause by restricting it to the desired note ID.
+       */
+      finalWhere = MyToDo.TaskDrafts._ID + // The ID column name
+          " = " + // test for equality
+          uri.getPathSegments(). // the incoming task ID
+              get(MyToDo.TaskDrafts.TASK_DRAFT_ID_PATH_POSITION);
+
+      // If there were additional selection criteria, append them to the final
+      // WHERE clause
+      if (where != null) {
+        finalWhere = finalWhere + " AND " + where;
+      }
+      // Performs the delete.
+      count = db.delete(MyToDo.TaskDrafts.TABLE_NAME, // The database table name.
+          finalWhere, // The final WHERE clause
+          whereArgs // The incoming where clause values.
+          );
+
       break;
 
     // If the incoming pattern is invalid, throws an exception.
@@ -434,6 +521,37 @@ public class MyToDoProvider extends ContentProvider {
           whereArgs // The where clause column values to select on, or
           // null if the values are in the where argument.
           );
+      if (count > 0) {
+
+        // Get dữ liểu bảng task để insert vào bảng drafs
+        Cursor cursorTask = db.query(MyToDo.Tasks.TABLE_NAME, READ_TASK_PROJECTION, MyToDo.Tasks._ID + " = ?",
+            new String[] { String.valueOf(uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION)) }, null, null,
+            null, "1");
+
+        ContentValues taskDraftValues;
+        if (cursorTask.moveToFirst()) {
+          Cursor cursorDraft = db.query(MyToDo.TaskDrafts.TABLE_NAME, new String[] { MyToDo.TaskDrafts._ID },
+              MyToDo.TaskDrafts._ID + " = ?",
+              new String[] { String.valueOf(uri.getPathSegments().get(MyToDo.TaskDrafts.TASK_DRAFT_ID_PATH_POSITION)) }, null,
+              null, null, "1");
+          // Ton tai thi update
+          if (cursorDraft.moveToFirst()) {
+            taskDraftValues = new ContentValues();
+            DatabaseUtils.cursorRowToContentValues(cursorTask, taskDraftValues);
+            taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+
+            db.update(MyToDo.TaskDrafts.TABLE_NAME, taskDraftValues, finalWhere, null);
+          } else { //Insert
+            taskDraftValues = new ContentValues();
+            DatabaseUtils.cursorRowToContentValues(cursorTask, taskDraftValues);
+            taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+            db.insert(MyToDo.TaskDrafts.TABLE_NAME, null, taskDraftValues);
+          }
+
+        }
+
+        cursorTask.close();
+      }
       break;
     // If the incoming pattern is invalid, throws an exception.
     default:

@@ -18,6 +18,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.example.mytodo_app.provider.MyToDo;
+import com.example.mytodo_app.utils.Constant;
 import com.example.mytodo_app.utils.NetworkUtils;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
@@ -29,7 +30,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   private static final String[] TASK_PROJECTION = new String[] { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
       MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
-      MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, MyToDo.Tasks.COLUMN_NAME_IS_DRAFT };
+      MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE};
+
+  private static final String[] TASK_DRAFT_PROJECTION = new String[] { MyToDo.TaskDrafts._ID,
+      MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID, MyToDo.TaskDrafts.COLUMN_NAME_NAME,
+      MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION, MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE,
+      MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE,
+      MyToDo.TaskDrafts.COLUMN_NAME_STATUS };
 
   public SyncAdapter(Context context, boolean autoInitialize) {
     super(context, autoInitialize);
@@ -98,8 +105,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
               contentValues.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE, updatedDate);
             }
 
-            contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
-
             // Kiểm tra tồn tại task?
             Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_SERVER_ID_URI_BASE,
                 jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID));
@@ -140,8 +145,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
    */
   private String getUpdatedDate(ContentProviderClient contentProviderClient) {
     try {
-      Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_DRAP_URI_BASE, "1");
-      Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, "_ID DESC LIMIT(1)");
+      Cursor cursor = contentProviderClient.query(MyToDo.Tasks.CONTENT_URI,
+          new String[] { MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE }, MyToDo.Tasks.COLUMN_NAME_ID + " > ? ",
+          new String[] { "0" }, MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE + " DESC LIMIT(1)");
       if (cursor.getCount() > 0) {
         cursor.moveToFirst();
 
@@ -160,73 +166,129 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
    */
   private void syncToServer(Account account, ContentProviderClient contentProviderClient) {
     Log.i(TAG, "begin sync to server");
-    String urlSyncTask = "";
     // Building Parameters
-    String[] keys = new String[] { "username", "name", "description", "reminderDate", "createdDate", "updatedDate" };
+    String[] keys = new String[] { "username", "taskId", "name", "description", "reminderDate", "createdDate", "updatedDate" };
+    boolean noteError;
 
     try {
-      Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_DRAP_URI_BASE, "0");
-      Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
-      Log.i(TAG, "Uri query draf : " + uri.toString());
+      // Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_DRAP_URI_BASE, "0");
+      Cursor cursor = contentProviderClient.query(MyToDo.TaskDrafts.CONTENT_URI, TASK_DRAFT_PROJECTION, null, null,
+          null);
 
       if (cursor.getCount() > 0) {
         Log.i(TAG, "Count cursor : " + cursor.getCount());
         cursor.moveToFirst();
-        int colIdIndex = cursor.getColumnIndex(MyToDo.Tasks._ID);
-        int colTaskIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID);
-//        int colUserIdIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_USER_ID);
-        int colNameIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_NAME);
-        int colDescriptionIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION);
-        int colReminderIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
-        int colCreatedDateIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_CREATE_DATE);
-        int colUpdatedDateIndex = cursor.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
+        int colIdIndex = cursor.getColumnIndex(MyToDo.TaskDrafts._ID);
+        int colTaskIdIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_ID);
+        int colNameIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_NAME);
+        int colDescriptionIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION);
+        int colReminderIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE);
+        int colCreatedDateIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE);
+        int colUpdatedDateIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE);
+        int colStatusIndex = cursor.getColumnIndex(MyToDo.TaskDrafts.COLUMN_NAME_STATUS);
 
         do {
-          long id = cursor.getLong(colIdIndex);
-          long taskId = cursor.getLong(colTaskIdIndex);
-//          long userId = cursor.getLong(colUserIdIndex);
+          Long id = cursor.getLong(colIdIndex);
+          Long taskId = cursor.getLong(colTaskIdIndex);
           String name = cursor.getString(colNameIndex);
           String description = cursor.getString(colDescriptionIndex);
           String reminderDate = cursor.getString(colReminderIndex);
           String createdDate = cursor.getString(colCreatedDateIndex);
           String updatedDate = cursor.getString(colUpdatedDateIndex);
+          Long status = cursor.getLong(colStatusIndex);
 
-          String[] values = new String[] { account.name, String.valueOf(taskId), name, description, reminderDate, createdDate, updatedDate };
-          
-          String urlGetTaskDetail = URL_HOST + "get-task-detail.php?taskId="+taskId;
-          JSONObject taskDetail = NetworkUtils.getJSONFromUrl(urlGetTaskDetail);
-          if(taskDetail.getBoolean(TAG_ERROR)) {
-            urlSyncTask = URL_HOST + "add-task.php";
-          } else {
-            urlSyncTask = URL_HOST + "update-task.php";
-          }
-          
-          JSONObject json = NetworkUtils.postJSONObjFromUrl(urlSyncTask, keys, values);
-          // check your log for json response
-          Log.d("task add result", json.toString());
+          String[] values = new String[] { account.name, taskId.toString(), name, description, reminderDate,
+              createdDate, updatedDate };
 
-          // json success tag
-          boolean error = json.getBoolean(TAG_ERROR);
+          switch (status.intValue()) {
 
-          if (!error) {
-            JSONArray arrTask = json.getJSONArray("task");
-            for (int i = 0; i < arrTask.length(); i++) {
+          case Constant.TASK_DRAFT_STATUS_INSERT:
 
-              ContentValues contentValues = new ContentValues();
-              JSONObject jsonObject = arrTask.getJSONObject(i);
+            String urlAddTask = URL_HOST + "add-task.php";
 
-              contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
-              // TODO contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
-              Log.i(TAG, "Updating task : " + id);
+            JSONObject addTaskResult = NetworkUtils.postJSONObjFromUrl(urlAddTask, keys, values);
+            // check your log for json response
+            Log.d("task add result", addTaskResult.toString());
 
-              Uri updateUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
-              contentProviderClient.update(updateUri, contentValues, null, null);
-              Log.i(TAG, "Updated task");
+            // json success tag
+            noteError = addTaskResult.getBoolean(TAG_ERROR);
+
+            if (!noteError) {
+              JSONArray arrTask = addTaskResult.getJSONArray("task");
+              for (int i = 0; i < arrTask.length(); i++) {
+
+                ContentValues contentValues = new ContentValues();
+                JSONObject jsonObject = arrTask.getJSONObject(i);
+
+                Log.i(TAG, "Start Update task : " + id);
+                contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
+                // TODO contentValues.put(MyToDo.Tasks.COLUMN_NAME_IS_DRAFT, 1);
+                Uri uriUpdateTask = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
+                contentProviderClient.update(uriUpdateTask, contentValues, null, null);
+
+                Log.i(TAG, "Start delete task draft : " +id);
+                Uri uriDeleteTaskDraft = Uri
+                    .withAppendedPath(MyToDo.TaskDrafts.CONTENT_ID_URI_BASE, String.valueOf(id));
+                contentProviderClient.delete(uriDeleteTaskDraft, null, null);
+                Log.i(TAG, "End delete task draft");
+
+                Log.i(TAG, "End Update task");
+              }
+
+            } else {
+              Log.i(TAG, addTaskResult.getString("message"));
             }
+            break;
 
-          } else {
-            Log.i(TAG, json.getString("message"));
+          case Constant.TASK_DRAFT_STATUS_UPDATE:
+            String urlUpdateTask = URL_HOST + "update-task.php";
+
+            JSONObject updateTaskResult = NetworkUtils.postJSONObjFromUrl(urlUpdateTask, keys, values);
+            // check your log for json response
+            Log.d("task update result", updateTaskResult.toString());
+
+            // json success tag
+            noteError = updateTaskResult.getBoolean(TAG_ERROR);
+
+            if (!noteError) {
+              JSONArray arrTask = updateTaskResult.getJSONArray("task");
+              for (int i = 0; i < arrTask.length(); i++) {
+                Log.i(TAG, "Start delete task draft : " + id);
+                Uri uriDeleteTaskDraft = Uri
+                    .withAppendedPath(MyToDo.TaskDrafts.CONTENT_ID_URI_BASE, String.valueOf(id));
+                contentProviderClient.delete(uriDeleteTaskDraft, null, null);
+                Log.i(TAG, "End delete task draft");
+              }
+
+            } else {
+              Log.i(TAG, updateTaskResult.getString("message"));
+            }
+            break;
+
+          case Constant.TASK_DRAFT_STATUS_DELETE:
+            String urlDeleteTask = URL_HOST + "delete-task.php";
+
+            JSONObject deleteTaskResult = NetworkUtils.postJSONObjFromUrl(urlDeleteTask, keys, values);
+            // check your log for json response
+            Log.d("task delete result", deleteTaskResult.toString());
+
+            // json success tag
+            noteError = deleteTaskResult.getBoolean(TAG_ERROR);
+
+            if (!noteError) {
+              Log.i(TAG, "Start delete task draft");
+              Uri uriDeleteTaskDraft = Uri.withAppendedPath(MyToDo.TaskDrafts.CONTENT_ID_URI_BASE, String.valueOf(id));
+              contentProviderClient.delete(uriDeleteTaskDraft, null, null);
+              Log.i(TAG, "End delete task draft");
+            } else {
+              Log.i(TAG, deleteTaskResult.getString("message"));
+            }
+            break;
+
+          default:
+            break;
           }
+
         } while (cursor.moveToNext());
 
       }
