@@ -7,6 +7,7 @@ import android.provider.BaseColumns;
  * Created by Sony on 7/3/2014.
  */
 public class MyToDo {
+
   public static final String AUTHORITY = "com.example.mytodolist.provider";
 
   private MyToDo() {
@@ -42,7 +43,6 @@ public class MyToDo {
      * Path part for the Task ID URI
      */
     private static final String PATH_TASK_ID = "/tasks/";
-    private static final String PATH_TASK_SERVER_ID = "/tasks-server/";
 
     /**
      * 0-relative position of a task ID segment in the path part of a task ID URI
@@ -57,14 +57,12 @@ public class MyToDo {
      * The content URI base for a single task. Callers must append a numeric task id to this Uri to retrieve a task
      */
     public static final Uri CONTENT_ID_URI_BASE = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_ID);
-    public static final Uri CONTENT_SERVER_ID_URI_BASE = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_SERVER_ID);
 
     /**
      * The content URI match pattern for a single task, specified by its ID. Use this to match incoming URIs or to
      * construct an Intent.
      */
     public static final Uri CONTENT_ID_URI_PATTERN = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_ID + "/#");
-    public static final Uri CONTENT_SERVER_ID_URI_PATTERN = Uri.parse(SCHEME + AUTHORITY + PATH_TASK_SERVER_ID + "/#");
 
     /*
      * MIME type definitions
@@ -117,30 +115,31 @@ public class MyToDo {
     public static final String COLUMN_NAME_DESCRIPTION = "description";
 
     /**
-     * Column name for the creation timestamp
+     * Column name of the reminderDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_REMINDER_DATE = "reminderDate";
+
     /**
-     * Column name for the creation timestamp
+     * Column name of the createdDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_CREATE_DATE = "createdDate";
 
     /**
-     * Column name for the modification timestamp
+     * Column name of the updatedDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_UPDATE_DATE = "updatedDate";
 
   }
-  
+
   public static final class TaskDrafts implements BaseColumns {
     private TaskDrafts() {
     }
@@ -242,24 +241,25 @@ public class MyToDo {
     public static final String COLUMN_NAME_DESCRIPTION = "description";
 
     /**
-     * Column name for the creation timestamp
+     * Column name of the reminderDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_REMINDER_DATE = "reminderDate";
+    
     /**
-     * Column name for the creation timestamp
+     * Column name of the createdDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_CREATE_DATE = "createdDate";
 
     /**
-     * Column name for the modification timestamp
+     * Column name of the updatedDate
      * <P>
-     * Type: INTEGER (long from System.curentTimeMillis())
+     * Type: TEXT
      * </P>
      */
     public static final String COLUMN_NAME_UPDATE_DATE = "updatedDate";

@@ -1,17 +1,14 @@
-package com.example.mytodo_app.reminder;
+/*package com.example.mytodo_app.reminder;
 
-import com.example.mytodo_app.R;
-import com.example.mytodo_app.TaskEditorActivity;
-import com.example.mytodo_app.provider.MyToDo;
-
-import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.util.Log;
-import android.view.WindowManager;
-import android.widget.Toast;
+
+import com.example.mytodo_app.R;
+import com.example.mytodo_app.TaskEditorActivity;
+import com.example.mytodo_app.provider.MyToDo;
 
 public class ReminderService extends WakeReminderIntentService {
   public ReminderService() {
@@ -38,13 +35,14 @@ public class ReminderService extends WakeReminderIntentService {
     int id = (int) ((long) rowId);
 
     mgr.notify(id, note);
-    /*
+    
      * AlertDialog.Builder builder = new AlertDialog.Builder(this); builder.setTitle("reminder");
      * builder.setMessage("message"); builder.setNegativeButton("repeat", null); builder.setPositiveButton("repeat",
      * null); AlertDialog alertDialog = builder.create();
      * alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT); alertDialog.show();
-     */
+     
     // Toast.makeText(getApplicationContext(), "Alarm Triggered and SMS Sent", Toast.LENGTH_LONG).show();
   }
 
 }
+*/

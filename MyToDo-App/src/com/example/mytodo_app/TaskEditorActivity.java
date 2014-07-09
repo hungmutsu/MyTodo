@@ -4,26 +4,23 @@ import java.util.Calendar;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
-import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.TimePickerDialog;
-import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.TimePicker;
 
 import com.example.mytodo_app.provider.MyToDo;
@@ -41,9 +38,6 @@ public class TaskEditorActivity extends Activity {
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
       MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
-  // A label for the saved state of the activity
-  private static final String ORIGINAL_CONTENT = "origContent";
-
   // This Activity can be started by more than one action. Each action is represented
   // as a "state" constant
   private static final int STATE_EDIT = 0;
@@ -53,15 +47,9 @@ public class TaskEditorActivity extends Activity {
   private int mState;
   private Uri mUri;
   private Cursor mCursor;
-  private String mOriginalContent;
-  private EditText etName, etDescription;
-  private TextView tvDate, tvTime;
-  private Button btnSelectDate, btnSelectTime;
+  private EditText etName, etDescription, etDate, etTime;
 
   private Calendar mCalendar;
-
-  private static final int DATE_PICKER_DIALOG = 0;
-  private static final int TIME_PICKER_DIALOG = 1;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -128,7 +116,7 @@ public class TaskEditorActivity extends Activity {
      * simple provider based on a local database, the block will be momentary, but in a real app you should use
      * android.content.AsyncQueryHandler or android.os.AsyncTask.
      */
-    mCursor = managedQuery(mUri, TASK_PROJECTION, null, null, null);
+    mCursor = getContentResolver().query(mUri, TASK_PROJECTION, null, null, null);
 
     // Sets the layout for this Activity. See res/layout/note_editor.xml
     setContentView(R.layout.activity_task_editor);
@@ -136,22 +124,9 @@ public class TaskEditorActivity extends Activity {
     // Gets a handle to the EditText in the the layout.
     etName = (EditText) findViewById(R.id.etName);
     etDescription = (EditText) findViewById(R.id.etDescription);
-    tvDate = (TextView) findViewById(R.id.tvDate);
-    tvTime = (TextView) findViewById(R.id.tvTime);
-    btnSelectDate = (Button) findViewById(R.id.btnSelectDate);
-    btnSelectTime = (Button) findViewById(R.id.btnSelectTime);
+    etDate = (EditText) findViewById(R.id.etDate);
+    etTime = (EditText) findViewById(R.id.etTime);
     mCalendar = Calendar.getInstance();
-
-    registerButtonListenersAndSetDefaultText();
-
-    /*
-     * If this Activity had stopped previously, its state was written the ORIGINAL_CONTENT location in the saved
-     * Instance state. This gets the state.
-     */
-    if (savedInstanceState != null) {
-      mOriginalContent = savedInstanceState.getString(ORIGINAL_CONTENT);
-    }
-
   }
 
   /**
@@ -170,7 +145,7 @@ public class TaskEditorActivity extends Activity {
      */
     if (mCursor != null) {
       // Requery in case something changed while paused (such as the title)
-      mCursor.requery();
+      mCursor = getContentResolver().query(mUri, TASK_PROJECTION, null, null, null);
       mCursor.moveToFirst();
 
       // Modifies the window title for the Activity according to the current Activity state.
@@ -204,8 +179,8 @@ public class TaskEditorActivity extends Activity {
       String taskDescription = mCursor.getString(colDescriptionIndex);
 
       etDescription.setTextKeepState(taskDescription);
-      tvDate.setTextKeepState(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
-      tvTime.setTextKeepState(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
+      etDate.setTextKeepState(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
+      etTime.setTextKeepState(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
 
       /*
        * Something is wrong. The Cursor should always contain data. Report an error in the note.
@@ -222,12 +197,11 @@ public class TaskEditorActivity extends Activity {
    * Activity has a chance to save its state so that the system can restore it. Notice that this method isn't a normal
    * part of the Activity lifecycle. It won't be called if the user simply navigates away from the Activity.
    */
+
   @Override
   protected void onSaveInstanceState(Bundle outState) {
-    // Save away the original text, so we still have it if the activity
-    // needs to be killed while paused.
-    Log.d(TAG, "On Save Instance Statue");
-    outState.putString(ORIGINAL_CONTENT, mOriginalContent);
+    // TODO Auto-generated method stub
+    super.onSaveInstanceState(outState);
   }
 
   /**
@@ -273,8 +247,7 @@ public class TaskEditorActivity extends Activity {
    * passes in a Menu object that is populated with items. Builds the menus for editing and inserting, and adds in
    * alternative actions that registered themselves to handle the MIME types for this application.
    *
-   * @param menu
-   *          A Menu object to which items should be added.
+   * @param menu A Menu object to which items should be added.
    * @return True to display the menu.
    */
   @Override
@@ -298,8 +271,7 @@ public class TaskEditorActivity extends Activity {
    * This method is called when a menu item is selected. Android passes in the selected item. The switch statement in
    * this method calls the appropriate method to perform the action the user chose.
    *
-   * @param item
-   *          The selected MenuItem
+   * @param item The selected MenuItem
    * @return True to indicate that the item was processed, and no further work is necessary. False to proceed to further
    *         processing as indicated in the MenuItem object.
    */
@@ -356,69 +328,64 @@ public class TaskEditorActivity extends Activity {
     }
   }
 
-  @Override
-  @Deprecated
-  protected Dialog onCreateDialog(int id) {
-    switch (id) {
-    case DATE_PICKER_DIALOG:
-      return showDatePicker();
-    case TIME_PICKER_DIALOG:
-      return showTimePicker();
+  /**
+   * Handle event button SelectDate click
+   */
+  public void selectDate(View view) {
+    DialogFragment newFragment = new SelectDateFragment();
+    newFragment.show(getFragmentManager(), "DatePicker");
+  }
+
+  /**
+   * Handle event button SelectTime click
+   */
+  public void selectTime(View view) {
+    DialogFragment newFragment = new SelectTimeFragment();
+    newFragment.show(getFragmentManager(), "TimePicker");
+  }
+
+  /**
+   * Open date picker
+   */
+  public class SelectDateFragment extends DialogFragment implements DatePickerDialog.OnDateSetListener {
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+      int yy = mCalendar.get(Calendar.YEAR);
+      int mm = mCalendar.get(Calendar.MONTH);
+      int dd = mCalendar.get(Calendar.DAY_OF_MONTH);
+      return new DatePickerDialog(getActivity(), this, yy, mm, dd);
     }
-    return super.onCreateDialog(id);
+
+    @Override
+    public void onDateSet(DatePicker view, int yy, int mm, int dd) {
+      mCalendar.set(yy, mm, dd);
+      Log.i(TAG, "Select Date : " + mCalendar.getTime().toString());
+
+      etDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
+    }
   }
 
-  private Dialog showTimePicker() {
-    TimePickerDialog timePicker = new TimePickerDialog(TaskEditorActivity.this, new OnTimeSetListener() {
+  /**
+   * Open time picker
+   */
+  public class SelectTimeFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+      int hour = mCalendar.get(Calendar.HOUR_OF_DAY);
+      int minute = mCalendar.get(Calendar.MINUTE);
 
-      @Override
-      public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-        mCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        mCalendar.set(Calendar.MINUTE, minute);
-      }
-    }, mCalendar.get(Calendar.HOUR_OF_DAY), mCalendar.get(Calendar.MINUTE), true);
+      return new TimePickerDialog(getActivity(), this, hour, minute, DateFormat.is24HourFormat(getActivity()));
+    }
 
-    return timePicker;
-  }
+    @Override
+    public void onTimeSet(TimePicker view, int hour, int minute) {
+      // TODO Auto-generated method stub
 
-  private Dialog showDatePicker() {
-    DatePickerDialog datePicker = new DatePickerDialog(TaskEditorActivity.this, new OnDateSetListener() {
+      mCalendar.set(Calendar.HOUR_OF_DAY, hour);
+      mCalendar.set(Calendar.MINUTE, minute);
 
-      @Override
-      public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-        mCalendar.set(Calendar.YEAR, year);
-        mCalendar.set(Calendar.MONTH, monthOfYear);
-        mCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-        tvDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
-      }
-    }, mCalendar.get(Calendar.YEAR), mCalendar.get(Calendar.MONTH), mCalendar.get(Calendar.DAY_OF_MONTH));
-    return datePicker;
-  }
-
-  private void registerButtonListenersAndSetDefaultText() {
-    btnSelectDate.setOnClickListener(new OnClickListener() {
-
-      @SuppressWarnings("deprecation")
-      @Override
-      public void onClick(View v) {
-        showDialog(DATE_PICKER_DIALOG);
-        tvDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
-      }
-    });
-
-    btnSelectTime.setOnClickListener(new OnClickListener() {
-
-      @SuppressWarnings("deprecation")
-      @Override
-      public void onClick(View v) {
-        showDialog(TIME_PICKER_DIALOG);
-        tvTime.setText(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
-      }
-    });
-
-    
-     tvDate.setText(CommonUtils.getStringDate(mCalendar, Constant.DATE_FORMAT));
-     tvTime.setText(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
-     
+      Log.i(TAG, "Select Time : " + mCalendar.getTime().toString());
+      etTime.setText(CommonUtils.getStringDate(mCalendar, Constant.TIME_FORMAT));
+    }
   }
 }

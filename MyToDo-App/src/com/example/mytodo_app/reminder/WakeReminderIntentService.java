@@ -1,4 +1,4 @@
-package com.example.mytodo_app.reminder;
+/*package com.example.mytodo_app.reminder;
 
 import android.app.IntentService;
 import android.content.Context;
@@ -41,3 +41,4 @@ public abstract class WakeReminderIntentService extends IntentService {
     }
   }
 }
+*/

@@ -38,26 +38,20 @@ public class MainActivity extends AccountAuthenticatorActivity {
 
   // Progress Dialog
   private ProgressDialog pDialog;
+
   // A content resolver for accessing the provider
-  static ContentResolver mResolver;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    mResolver = getContentResolver();
-
     // Check exist account
     AccountManager accountManager = AccountManager.get(this);
     Account[] accounts = accountManager.getAccountsByType(Constant.ACCOUNT_TYPE);
-    Log.i(TAG, "account length" + accounts.length);
-    // Log.i(TAG, "account name" + accounts[0].name);
-    if (accounts.length > 0) {
-      // Chuyen thang den TaskList
 
-      // Turn on automatic syncing for the default account and authority
-      // mResolver.setSyncAutomatically(accounts[0], MyToDo.AUTHORITY, true);
+    if (accounts.length > 0) {
+      //Chuyen den trang TaskList
       Intent i = new Intent(MainActivity.this, TaskListActivity.class);
       startActivity(i);
       finish();
@@ -95,7 +89,7 @@ public class MainActivity extends AccountAuthenticatorActivity {
   }
 
   /**
-   * Background Async Task to Get complete user details
+   * Background Async Task to Get complete user login
    */
   private class Login extends AsyncTask<String, Void, Boolean> {
     Context mContext;
@@ -134,9 +128,6 @@ public class MainActivity extends AccountAuthenticatorActivity {
 
         if (!error) {
 
-          // get first User object from JSON Array
-          // JSONObject userObj = json.getJSONArray("user").getJSONObject(0); // JSON Array
-
           Bundle result = null;
           Account account = new Account(username, Constant.ACCOUNT_TYPE);
           AccountManager acountManager = AccountManager.get(mContext);
@@ -155,7 +146,6 @@ public class MainActivity extends AccountAuthenticatorActivity {
             ContentResolver.addPeriodicSync(account, MyToDo.AUTHORITY, new Bundle(), SYNC_INTERVAL);
             return true;
           } else {
-            Log.i("LOGIN", "TON TAI");
             return false;
           }
         } else {

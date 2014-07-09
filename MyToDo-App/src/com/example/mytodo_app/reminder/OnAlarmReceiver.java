@@ -24,34 +24,42 @@ import com.example.mytodo_app.provider.MyToDo;
 import com.example.mytodo_app.utils.CommonUtils;
 import com.example.mytodo_app.utils.Constant;
 
+/**
+ * @author Sony
+ */
 public class OnAlarmReceiver extends BroadcastReceiver {
 
+  private static final String TAG = "OnAlarmReceiver";
   private Context mContext;
   MediaPlayer mediaPlayer;
 
+  /*
+   * (non-Javadoc)
+   * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+   */
   @Override
   public void onReceive(Context context, Intent intent) {
 
-    Log.d("==OnAlarmReceiver==", "==onReceive==");
-    // TODO Auto-generated method stub
+    Log.i(TAG, "begin receive");
+
     this.mContext = context;
     final long rowid = intent.getExtras().getLong(MyToDo.Tasks._ID);
     final String name = intent.getExtras().getString(MyToDo.Tasks.COLUMN_NAME_NAME);
     final String description = intent.getExtras().getString(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION);
-    WakeReminderIntentService.acquireStaticLock(context);
-    Intent i = new Intent(context, ReminderService.class);
-    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    i.putExtra(MyToDo.Tasks._ID, rowid);
-    i.putExtra(MyToDo.Tasks.COLUMN_NAME_NAME, name);
 
     // thong bao reminder bang sound
     playMedia(context);
     // hien thi dialog reminder
     showAlarmDialog(context, rowid, name, description);
 
-    context.startService(i);
+    Log.i(TAG, "end receive");
   }
 
+  /**
+   * play sound alarm
+   * 
+   * @param context {@link Context}
+   */
   private void playMedia(Context context) {
     try {
       Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
@@ -66,17 +74,25 @@ public class OnAlarmReceiver extends BroadcastReceiver {
     }
   }
 
-  private void showAlarmDialog(Context context, final long rowid, final String title, final String body) {
+  /**
+   * Show dialog alarm
+   * 
+   * @param context {@link Context}
+   * @param taskId Id of task
+   * @param name name of task
+   * @param description description of task
+   */
+  private void showAlarmDialog(Context context, final long taskId, final String name, final String description) {
     AlertDialog.Builder builder = new AlertDialog.Builder(context);
-    builder.setTitle("Reminder");
-    builder.setMessage(title);
+    builder.setTitle("MyToDo Reminder");
+    builder.setMessage(description);
     builder.setNegativeButton("Sleep", new OnClickListener() {
 
       @Override
       public void onClick(DialogInterface dialog, int which) {
-        setReminder(rowid, title, body);
+        setReminder(taskId, name, description);
         mediaPlayer.stop();
-        Log.d("==Sleep==", "SLEEP" + rowid);
+        Log.i(TAG, "SLEEP" + taskId);
       }
     });
     builder.setPositiveButton("Cancel", new OnClickListener() {
@@ -85,7 +101,7 @@ public class OnAlarmReceiver extends BroadcastReceiver {
       public void onClick(DialogInterface dialog, int which) {
         mediaPlayer.stop();
         // cancel regular alarms
-        PendingIntent pi = getPendingIntent(mContext, (int) rowid);
+        PendingIntent pi = getPendingIntent(mContext, (int) taskId);
         AlarmManager alarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(pi);
         pi.cancel();
@@ -96,14 +112,21 @@ public class OnAlarmReceiver extends BroadcastReceiver {
     alertDialog.show();
   }
 
+  /**
+   * Update to table task
+   * 
+   * @param taskId Id of task
+   * @param name name of task
+   * @param description description of task
+   */
   @SuppressLint("SimpleDateFormat")
-  protected void setReminder(long rowid, String name, String description) {
+  protected void setReminder(long taskId, String name, String description) {
     Calendar mCalendar = Calendar.getInstance();
     mCalendar.set(Calendar.MONTH, mCalendar.get(Calendar.MONTH) + 1);
     int minutes = mCalendar.get(Calendar.MINUTE) + 5;
     mCalendar.set(Calendar.MINUTE, minutes);
 
-    Log.d("==SLEEP==",
+    Log.i(TAG, "update to task" + 
         mCalendar.get(Calendar.YEAR) + "-" + mCalendar.get(Calendar.MONTH) + "/" + mCalendar.get(Calendar.DAY_OF_MONTH)
             + "|" + mCalendar.get(Calendar.HOUR_OF_DAY) + ":" + minutes);
 
@@ -117,13 +140,13 @@ public class OnAlarmReceiver extends BroadcastReceiver {
     values.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE,
         CommonUtils.getStringDate(Calendar.getInstance(), Constant.DATE_TIME_FORMAT));
 
-    Uri mUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(rowid));
+    Uri mUri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(taskId));
     int count = mContext.getContentResolver().update(mUri, values, null, null);
 
     if (count > 0) {
-      new ReminderManager(mContext).setUpdateReminder(rowid, mCalendar, name);
+      new ReminderManager(mContext).setUpdateReminder(taskId, mCalendar, name);
 
-      Toast.makeText(mContext, name + " Reminder Snoozed for " + 2 + " Minutes ", Toast.LENGTH_LONG).show();
+      Toast.makeText(mContext, name + " Reminder Snoozed for " + 5 + " Minutes ", Toast.LENGTH_LONG).show();
     }
   }
 

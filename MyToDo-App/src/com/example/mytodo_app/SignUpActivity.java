@@ -24,7 +24,7 @@ import com.example.mytodo_app.utils.NetworkUtils;
 
 public class SignUpActivity extends AccountAuthenticatorActivity {
 
-  private static final String TAG = "LOGIN";
+  private static final String TAG = "SIGNUP";
   private static final String URL_HOST = "http://192.168.1.77/mytodo-service/";
   public static final String JSON_TAG_ERROR = "error";
   // Sync interval constants
@@ -96,18 +96,13 @@ public class SignUpActivity extends AccountAuthenticatorActivity {
     @Override
     protected Boolean doInBackground(String... params) {
 
-      // Check for success tag
+      // Check for error tag
       boolean error;
 
       String username = signUpName.getText().toString();
       String password = signUpPassword.getText().toString();
       String fullName = signUpFullName.getText().toString();
-
-      /*
-       * String deviceId = Secure.getString(getActivity().getContentResolver(), Secure.ANDROID_ID); Log.d("android_id:",
-       * deviceId);
-       */
-
+      
       try {
         // Building Parameters
         String[] keys = new String[] { "username", "password", "name" };
@@ -124,9 +119,6 @@ public class SignUpActivity extends AccountAuthenticatorActivity {
         // json success tag
         error = json.getBoolean(JSON_TAG_ERROR);
         if (!error) {
-
-          // get first User object from JSON Array
-          // JSONObject userObj = json.getJSONArray("user").getJSONObject(0); // JSON Array
 
           Bundle result = null;
           Account account = new Account(username, Constant.ACCOUNT_TYPE);
@@ -146,7 +138,6 @@ public class SignUpActivity extends AccountAuthenticatorActivity {
             ContentResolver.addPeriodicSync(account, MyToDo.AUTHORITY, new Bundle(), SYNC_INTERVAL);
             return true;
           } else {
-            Log.i("LOGIN", "TON TAI");
             return false;
           }
         } else {

@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.util.Log;
 
 public class ReminderManager {
+  private static final String TAG = "ReminderManager";
   private AlarmManager mAlarmManager;
   private Context mContext;
 
@@ -26,6 +27,9 @@ public class ReminderManager {
     i.putExtra(MyToDo.Tasks._ID, (long) taskId);
     i.putExtra(MyToDo.Tasks.COLUMN_NAME_NAME, name);
     i.putExtra(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, description);
+    
+    Log.i(TAG, "taskId : " + taskId + "name : " + name + "description : " + description);
+    
     PendingIntent pi = PendingIntent.getBroadcast(mContext, 0, i, PendingIntent.FLAG_ONE_SHOT);
     mAlarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pi);
 
@@ -36,6 +40,9 @@ public class ReminderManager {
     Intent i = new Intent(mContext, OnAlarmReceiver.class);
     i.putExtra(MyToDo.Tasks._ID, (long) taskId);
     i.putExtra(MyToDo.Tasks.COLUMN_NAME_NAME, name);
+    
+    Log.i(TAG, "taskId : " + taskId + "name : " + name);
+    
     PendingIntent pi = PendingIntent.getBroadcast(mContext, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
     mAlarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pi);
   }

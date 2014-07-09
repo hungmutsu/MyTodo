@@ -30,7 +30,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   private static final String[] TASK_PROJECTION = new String[] { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
       MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
-      MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE};
+      MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
   private static final String[] TASK_DRAFT_PROJECTION = new String[] { MyToDo.TaskDrafts._ID,
       MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID, MyToDo.TaskDrafts.COLUMN_NAME_NAME,
@@ -106,9 +106,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
 
             // Kiểm tra tồn tại task?
-            Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_SERVER_ID_URI_BASE,
-                jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID));
-            Cursor cursor = contentProviderClient.query(uri, TASK_PROJECTION, null, null, null);
+            Cursor cursor = contentProviderClient.query(MyToDo.Tasks.CONTENT_URI, new String[] { MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE },
+                MyToDo.Tasks.COLUMN_NAME_ID + " = ? ", new String[] { jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_ID) }, "_ID DESC LIMIT(1)");
 
             if (cursor.getCount() > 0) {
               cursor.moveToFirst();
@@ -167,7 +166,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   private void syncToServer(Account account, ContentProviderClient contentProviderClient) {
     Log.i(TAG, "begin sync to server");
     // Building Parameters
-    String[] keys = new String[] { "username", "taskId", "name", "description", "reminderDate", "createdDate", "updatedDate" };
+    String[] keys = new String[] { "username", "taskId", "name", "description", "reminderDate", "createdDate",
+        "updatedDate" };
     boolean noteError;
 
     try {
@@ -226,7 +226,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 Uri uriUpdateTask = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_ID_URI_BASE, String.valueOf(id));
                 contentProviderClient.update(uriUpdateTask, contentValues, null, null);
 
-                Log.i(TAG, "Start delete task draft : " +id);
+                Log.i(TAG, "Start delete task draft : " + id);
                 Uri uriDeleteTaskDraft = Uri
                     .withAppendedPath(MyToDo.TaskDrafts.CONTENT_ID_URI_BASE, String.valueOf(id));
                 contentProviderClient.delete(uriDeleteTaskDraft, null, null);

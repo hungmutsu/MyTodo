@@ -61,28 +61,17 @@ public class TaskListActivity extends ListActivity {
      */
     getListView().setOnCreateContextMenuListener(this);
 
-    /*
-     * Performs a managed query. The Activity handles closing and requerying the cursor when needed. Please see the
-     * introductory note about performing provider operations on the UI thread.
-     */
-    Cursor cursor = managedQuery(getIntent().getData(), TASK_PROJECTION, null, null, null);
-
-    /*
-     * The following two arrays create a "map" between columns in the cursor and view IDs for items in the ListView.
-     * Each element in the dataColumns array represents a column name; each element in the viewID array represents the
-     * ID of a View. The SimpleCursorAdapter maps them in ascending order to determine where each column value will
-     * appear in the ListView.
-     */
+    Cursor cursor = getContentResolver().query(getIntent().getData(), TASK_PROJECTION, null, null, null);
 
     // The names of the cursor columns to display in the view, initialized to the title column
     String[] dataColumns = { MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE,
         MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
-    // The view IDs that will display the cursor columns, initialized to the TextView in
-    // noteslist_item.xml
+    // The view IDs that will display the cursor columns
     int[] viewIDs = { R.id.tvTaskName, R.id.tvReminder, R.id.tvUpdate };
 
     // Creates the backing adapter for the ListView.
+
     SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, // The Context for the ListView
         R.layout.task_list_item, // Points to the XML for a list item
         cursor, // The cursor to get items from
@@ -100,8 +89,7 @@ public class TaskListActivity extends ListActivity {
    * they do this, the code in onCreateOptionsMenu() will add the Activity that contains the intent filter to its list
    * of options. In effect, the menu will offer the user other applications that can handle notes.
    * 
-   * @param menu
-   *          A Menu object, to which menu items should be added.
+   * @param menu A Menu object, to which menu items should be added.
    * @return True, always. The menu should be displayed.
    */
   @Override
@@ -129,8 +117,7 @@ public class TaskListActivity extends ListActivity {
    * was not INSERT, then most likely it was an alternative option from another application. The parent method is called
    * to process the item.
    * 
-   * @param item
-   *          The menu item that was selected by the user
+   * @param item The menu item that was selected by the user
    * @return True, if the INSERT menu item was selected; otherwise, the result of calling the parent method.
    */
   @Override
@@ -155,12 +142,9 @@ public class TaskListActivity extends ListActivity {
    * for context menus in its ListView (this is done in onCreate()). The only available options are COPY and DELETE.
    * Context-click is equivalent to long-press.
    *
-   * @param menu
-   *          A ContexMenu object to which items should be added.
-   * @param v
-   *          The View for which the context menu is being constructed.
-   * @param menuInfo
-   *          Data associated with view.
+   * @param menu A ContexMenu object to which items should be added.
+   * @param v The View for which the context menu is being constructed.
+   * @param menuInfo Data associated with view.
    * @throws ClassCastException
    */
   @Override
@@ -199,11 +183,11 @@ public class TaskListActivity extends ListActivity {
     // Sets the menu header to be the title of the selected note.
     menu.setHeaderTitle(cursor.getString(COLUMN_INDEX_NAME));
 
-    // Append to the
-    // menu items for any other activities that can do stuff with it
-    // as well. This does a query on the system for any activities that
-    // implement the ALTERNATIVE_ACTION for our data, adding a menu item
-    // for each one that is found.
+    /*
+     * Append to the menu items for any other activities that can do stuff with it as well. This does a query on the
+     * system for any activities that implement the ALTERNATIVE_ACTION for our data, adding a menu item for each one
+     * that is found.
+     */
     Intent intent = new Intent(null, Uri.withAppendedPath(getIntent().getData(), Integer.toString((int) info.id)));
     intent.addCategory(Intent.CATEGORY_ALTERNATIVE);
     menu.addIntentOptions(Menu.CATEGORY_ALTERNATIVE, 0, 0, new ComponentName(this, TaskListActivity.class), null,
@@ -215,8 +199,7 @@ public class TaskListActivity extends ListActivity {
    * menu items that are actually handled are DELETE and COPY. Anything else is an alternative option, for which default
    * handling should be done.
    *
-   * @param item
-   *          The selected menu item
+   * @param item The selected menu item
    * @return True if the menu item was DELETE, and no default processing is need, otherwise false, which triggers the
    *         default handling of the item.
    * @throws ClassCastException
@@ -251,9 +234,10 @@ public class TaskListActivity extends ListActivity {
 
     case R.id.context_delete:
 
-      // Deletes the note from the provider by passing in a URI in note ID format.
-      // Please see the introductory note about performing provider operations on the
-      // UI thread.
+      /*
+       * Deletes the note from the provider by passing in a URI in note ID format. Please see the introductory note
+       * about performing provider operations on the UI thread.
+       */
       getContentResolver().delete(taskUri, null, null);
 
       // Returns to the caller and skips further processing.
@@ -268,14 +252,10 @@ public class TaskListActivity extends ListActivity {
    * either PICK (get data from the provider) or GET_CONTENT (get or create data). If the incoming action is EDIT, this
    * method sends a new Intent to start NoteEditor.
    * 
-   * @param l
-   *          The ListView that contains the clicked item
-   * @param v
-   *          The View of the individual item
-   * @param position
-   *          The position of v in the displayed list
-   * @param id
-   *          The row ID of the clicked item
+   * @param l The ListView that contains the clicked item
+   * @param v The View of the individual item
+   * @param position The position of v in the displayed list
+   * @param id The row ID of the clicked item
    */
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -289,13 +269,16 @@ public class TaskListActivity extends ListActivity {
     // Handles requests for note data
     if (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action)) {
 
-      // Sets the result to return to the component that called this Activity. The
-      // result contains the new URI
+      /*
+       * Sets the result to return to the component that called this Activity. The result contains the new URI
+       */
       setResult(RESULT_OK, new Intent().setData(uri));
     } else {
 
-      // Sends out an Intent to start an Activity that can handle ACTION_EDIT. The
-      // Intent's data is the note ID URI. The effect is to call NoteEdit.
+      /*
+       * Sends out an Intent to start an Activity that can handle ACTION_EDIT. The Intent's data is the task ID URI. The
+       * effect is to call TaskEdit.
+       */
       startActivity(new Intent(Intent.ACTION_EDIT, uri));
     }
   }
