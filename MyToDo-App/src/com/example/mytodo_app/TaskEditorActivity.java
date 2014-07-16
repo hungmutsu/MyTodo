@@ -2,6 +2,9 @@ package com.example.mytodo_app;
 
 import java.util.Calendar;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
@@ -34,7 +37,7 @@ public class TaskEditorActivity extends Activity {
   private static final String TAG = "TasksListActivity";
 
   private static final String[] TASK_PROJECTION = new String[] { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
-      MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
+      MyToDo.Tasks.COLUMN_NAME_USER_NAME, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
       MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
@@ -306,6 +309,10 @@ public class TaskEditorActivity extends Activity {
 
     // Sets up a map to contain values to be updated in the provider.
     ContentValues values = new ContentValues();
+    Account[] accounts = AccountManager.get(this).getAccountsByType(Constant.ACCOUNT_TYPE);
+    if (accounts.length > 0) {
+      values.put(MyToDo.Tasks.COLUMN_NAME_USER_NAME, accounts[0].name);
+    }
     values.put(MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE,
         CommonUtils.getStringDate(Calendar.getInstance(), Constant.DATE_TIME_FORMAT));
     values.put(MyToDo.Tasks.COLUMN_NAME_NAME, name);
@@ -331,6 +338,7 @@ public class TaskEditorActivity extends Activity {
   /**
    * Handle event button SelectDate click
    */
+  @SuppressLint("NewApi")
   public void selectDate(View view) {
     DialogFragment newFragment = new SelectDateFragment();
     newFragment.show(getFragmentManager(), "DatePicker");
@@ -339,6 +347,7 @@ public class TaskEditorActivity extends Activity {
   /**
    * Handle event button SelectTime click
    */
+  @SuppressLint("NewApi")
   public void selectTime(View view) {
     DialogFragment newFragment = new SelectTimeFragment();
     newFragment.show(getFragmentManager(), "TimePicker");
@@ -347,6 +356,7 @@ public class TaskEditorActivity extends Activity {
   /**
    * Open date picker
    */
+  @SuppressLint("NewApi")
   public class SelectDateFragment extends DialogFragment implements DatePickerDialog.OnDateSetListener {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -368,6 +378,7 @@ public class TaskEditorActivity extends Activity {
   /**
    * Open time picker
    */
+  @SuppressLint("NewApi")
   public class SelectTimeFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {

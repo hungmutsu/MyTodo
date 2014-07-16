@@ -28,12 +28,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   // JSON Node names
   public static final String TAG_ERROR = "error";
   private static final String[] TASK_PROJECTION = new String[] { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
-      MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
+      MyToDo.Tasks.COLUMN_NAME_USER_NAME, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
       MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
   private static final String[] TASK_DRAFT_PROJECTION = new String[] { MyToDo.TaskDrafts._ID,
-      MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID, MyToDo.TaskDrafts.COLUMN_NAME_NAME,
+      MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_NAME, MyToDo.TaskDrafts.COLUMN_NAME_NAME,
       MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION, MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE,
       MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE,
       MyToDo.TaskDrafts.COLUMN_NAME_STATUS };
@@ -87,6 +87,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             JSONObject jsonObject = arrTask.getJSONObject(i);
 
             contentValues.put(MyToDo.Tasks.COLUMN_NAME_ID, jsonObject.getInt(MyToDo.Tasks.COLUMN_NAME_ID));
+            contentValues.put(MyToDo.Tasks.COLUMN_NAME_USER_NAME, account.name);
             contentValues.put(MyToDo.Tasks.COLUMN_NAME_NAME, jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_NAME));
             contentValues.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
                 jsonObject.getString(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION));
@@ -172,7 +173,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     try {
       // Uri uri = Uri.withAppendedPath(MyToDo.Tasks.CONTENT_DRAP_URI_BASE, "0");
-      Cursor cursor = contentProviderClient.query(MyToDo.TaskDrafts.CONTENT_URI, TASK_DRAFT_PROJECTION, null, null,
+      Cursor cursor = contentProviderClient.query(MyToDo.TaskDrafts.CONTENT_URI, TASK_DRAFT_PROJECTION, MyToDo.TaskDrafts.COLUMN_NAME_USER_NAME + " = ?", new String[]{account.name},
           null);
 
       if (cursor.getCount() > 0) {

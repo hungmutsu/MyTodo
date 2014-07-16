@@ -48,7 +48,7 @@ public class MyToDoProvider extends ContentProvider {
   private static HashMap<String, String> sTaskDraftsProjectionMap;
 
   private static String[] READ_TASK_PROJECTION = { MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID,
-      MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
+      MyToDo.Tasks.COLUMN_NAME_USER_NAME, MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION,
       MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_CREATE_DATE,
       MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
@@ -79,7 +79,7 @@ public class MyToDoProvider extends ContentProvider {
     sTasksProjectionMap = new HashMap<String, String>();
     sTasksProjectionMap.put(MyToDo.Tasks._ID, MyToDo.Tasks._ID);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_ID, MyToDo.Tasks.COLUMN_NAME_ID);
-    sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_USER_ID, MyToDo.Tasks.COLUMN_NAME_USER_ID);
+    sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_USER_NAME, MyToDo.Tasks.COLUMN_NAME_USER_NAME);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_NAME);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION);
     sTasksProjectionMap.put(MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE);
@@ -89,7 +89,7 @@ public class MyToDoProvider extends ContentProvider {
     sTaskDraftsProjectionMap = new HashMap<String, String>();
     sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts._ID, MyToDo.TaskDrafts._ID);
     sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_ID);
-    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_USER_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID);
+    sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_USER_NAME, MyToDo.TaskDrafts.COLUMN_NAME_USER_NAME);
     sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_NAME, MyToDo.TaskDrafts.COLUMN_NAME_NAME);
     sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION, MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION);
     sTaskDraftsProjectionMap.put(MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE,
@@ -109,8 +109,10 @@ public class MyToDoProvider extends ContentProvider {
     return true;
   }
 
-  /* (non-Javadoc)
-   * @see android.content.ContentProvider#query(android.net.Uri, java.lang.String[], java.lang.String, java.lang.String[], java.lang.String)
+  /*
+   * (non-Javadoc)
+   * @see android.content.ContentProvider#query(android.net.Uri, java.lang.String[], java.lang.String,
+   * java.lang.String[], java.lang.String)
    */
   @Override
   public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
@@ -126,7 +128,7 @@ public class MyToDoProvider extends ContentProvider {
     switch (sUriMatcher.match(uri)) {
     // If the incoming URI is for tasks, chooses the Task projection
     case TASKS:
-      
+
       qb.setTables(MyToDo.Tasks.TABLE_NAME);
       qb.setProjectionMap(sTasksProjectionMap);
       break;
@@ -136,11 +138,11 @@ public class MyToDoProvider extends ContentProvider {
      * "_ID = <TASK_ID>" to the where clause, so that it selects that single note
      */
     case TASK_ID:
-      
+
       qb.setTables(MyToDo.Tasks.TABLE_NAME);
       qb.setProjectionMap(sTasksProjectionMap);
       qb.appendWhere(MyToDo.Tasks._ID + "=" + uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION));
-      
+
       break;
 
     case TASK_DRAFTS:
@@ -448,6 +450,8 @@ public class MyToDoProvider extends ContentProvider {
         Cursor cursorTask = db.query(MyToDo.Tasks.TABLE_NAME, READ_TASK_PROJECTION, MyToDo.Tasks._ID + " = ?",
             new String[] { String.valueOf(uri.getPathSegments().get(MyToDo.Tasks.TASK_ID_PATH_POSITION)) }, null, null,
             null, "1");
+        cursorTask.moveToFirst();
+        Long taskId = cursorTask.getLong(cursorTask.getColumnIndex(MyToDo.Tasks.COLUMN_NAME_ID));
 
         ContentValues taskDraftValues;
         if (cursorTask.moveToFirst()) {
@@ -460,14 +464,23 @@ public class MyToDoProvider extends ContentProvider {
             // Update to taskDrafts
             taskDraftValues = new ContentValues();
             DatabaseUtils.cursorRowToContentValues(cursorTask, taskDraftValues);
-            taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+            if (taskId > 0) {
+              taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+            } else {
+              taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_INSERT);
+            }
 
             db.update(MyToDo.TaskDrafts.TABLE_NAME, taskDraftValues, finalWhere, null);
           } else {
             // Insert to taskDrafts
             taskDraftValues = new ContentValues();
             DatabaseUtils.cursorRowToContentValues(cursorTask, taskDraftValues);
-            taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+            
+            if (taskId > 0) {
+              taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_UPDATE);
+            } else {
+              taskDraftValues.put(MyToDo.TaskDrafts.COLUMN_NAME_STATUS, Constant.TASK_DRAFT_STATUS_INSERT);
+            }
             db.insert(MyToDo.TaskDrafts.TABLE_NAME, null, taskDraftValues);
           }
 

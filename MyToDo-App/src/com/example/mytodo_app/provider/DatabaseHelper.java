@@ -11,17 +11,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
   private static final String TASK_TABLE_CREATE = String
       .format(
-          "CREATE TABLE %s ( %s INTEGER PRIMARY KEY AUTOINCREMENT,%s INTEGER DEFAULT 0,%s INTEGER, %s TEXT, %s TEXT, %s TEXT, %s TEXT,"
+          "CREATE TABLE %s ( %s INTEGER PRIMARY KEY AUTOINCREMENT,%s INTEGER DEFAULT 0,%s TEXT, %s TEXT, %s TEXT, %s TEXT, %s TEXT,"
           + " %s TEXT)",
-          MyToDo.Tasks.TABLE_NAME, MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID, MyToDo.Tasks.COLUMN_NAME_USER_ID,
+          MyToDo.Tasks.TABLE_NAME, MyToDo.Tasks._ID, MyToDo.Tasks.COLUMN_NAME_ID, MyToDo.Tasks.COLUMN_NAME_USER_NAME,
           MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE,
           MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE);
 
   private static final String TASK_DRAFT_TABLE_CREATE = String
       .format(
-          "CREATE TABLE %s (%s INTEGER PRIMARY KEY,%s INTEGER,%s INTEGER, %s TEXT, %s TEXT, %s TEXT, %s TEXT,"
+          "CREATE TABLE %s (%s INTEGER PRIMARY KEY,%s INTEGER,%s TEXT, %s TEXT, %s TEXT, %s TEXT, %s TEXT,"
           + " %s TEXT,%s INTEGER DEFAULT 1)",
-          MyToDo.TaskDrafts.TABLE_NAME, MyToDo.TaskDrafts._ID, MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_ID,
+          MyToDo.TaskDrafts.TABLE_NAME, MyToDo.TaskDrafts._ID, MyToDo.TaskDrafts.COLUMN_NAME_ID, MyToDo.TaskDrafts.COLUMN_NAME_USER_NAME,
           MyToDo.TaskDrafts.COLUMN_NAME_NAME, MyToDo.TaskDrafts.COLUMN_NAME_DESCRIPTION, MyToDo.TaskDrafts.COLUMN_NAME_REMINDER_DATE,
           MyToDo.TaskDrafts.COLUMN_NAME_CREATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_UPDATE_DATE, MyToDo.TaskDrafts.COLUMN_NAME_STATUS);
   

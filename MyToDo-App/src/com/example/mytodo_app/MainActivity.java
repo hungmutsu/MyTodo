@@ -67,7 +67,6 @@ public class MainActivity extends AccountAuthenticatorActivity {
 
       @Override
       public void onClick(View v) {
-        // TODO Auto-generated method stub
         Login login = new Login(MainActivity.this);
         login.execute();
       }
@@ -149,7 +148,9 @@ public class MainActivity extends AccountAuthenticatorActivity {
             return false;
           }
         } else {
-          loginError.setText(json.getString("message"));
+          Log.i(TAG, json.getString("message"));
+//          loginError.setText(json.getString("message"));
+          
           return false;
         }
       } catch (JSONException e) {
@@ -171,7 +172,10 @@ public class MainActivity extends AccountAuthenticatorActivity {
         Intent i = new Intent(MainActivity.this, TaskListActivity.class);
         startActivity(i);
         finish();
+      } else {
+        loginError.setText("Login failed. Incorrect username/password.");
       }
+      
     }
   }
 }

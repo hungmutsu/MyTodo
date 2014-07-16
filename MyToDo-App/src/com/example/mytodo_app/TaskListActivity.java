@@ -1,5 +1,7 @@
 package com.example.mytodo_app;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.ListActivity;
 import android.content.ComponentName;
 import android.content.ContentUris;
@@ -18,6 +20,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.mytodo_app.provider.MyToDo;
+import com.example.mytodo_app.utils.Constant;
 
 public class TaskListActivity extends ListActivity {
 
@@ -28,6 +31,7 @@ public class TaskListActivity extends ListActivity {
       MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_DESCRIPTION, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE,
       MyToDo.Tasks.COLUMN_NAME_CREATE_DATE, MyToDo.Tasks.COLUMN_NAME_UPDATE_DATE };
 
+  private static Account[] accounts;
   /**
    * The index of the TaskId column
    */
@@ -60,8 +64,11 @@ public class TaskListActivity extends ListActivity {
      * in NotesList.
      */
     getListView().setOnCreateContextMenuListener(this);
-
-    Cursor cursor = getContentResolver().query(getIntent().getData(), TASK_PROJECTION, null, null, null);
+    
+    accounts = AccountManager.get(this).getAccountsByType(Constant.ACCOUNT_TYPE);
+    
+    Cursor cursor = getContentResolver().query(getIntent().getData(), TASK_PROJECTION,
+        MyToDo.Tasks.COLUMN_NAME_USER_NAME + "= ?", new String[] { accounts[0].name }, null);
 
     // The names of the cursor columns to display in the view, initialized to the title column
     String[] dataColumns = { MyToDo.Tasks.COLUMN_NAME_NAME, MyToDo.Tasks.COLUMN_NAME_REMINDER_DATE,
@@ -134,6 +141,19 @@ public class TaskListActivity extends ListActivity {
       startActivity(new Intent(Intent.ACTION_INSERT, getIntent().getData()));
       return true;
     }
+    if (id == R.id.action_sign_out) {
+
+      // Check exist account
+
+      for (Account account : accounts) {
+        AccountManager.get(this).removeAccount(account, null, null);
+      }
+
+      Intent intent = new Intent(TaskListActivity.this, MainActivity.class);
+      startActivity(intent);
+      finish();
+    }
+
     return super.onOptionsItemSelected(item);
   }
 

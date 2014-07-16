@@ -96,7 +96,7 @@ public class MyToDo {
      * Type: INTEGER
      * </P>
      */
-    public static final String COLUMN_NAME_USER_ID = "userId";
+    public static final String COLUMN_NAME_USER_NAME = "username";
 
     /**
      * Column name of the task name
@@ -222,7 +222,7 @@ public class MyToDo {
      * Type: INTEGER
      * </P>
      */
-    public static final String COLUMN_NAME_USER_ID = "userId";
+    public static final String COLUMN_NAME_USER_NAME = "username";
 
     /**
      * Column name of the task name

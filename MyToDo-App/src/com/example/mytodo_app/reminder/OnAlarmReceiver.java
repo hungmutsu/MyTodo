@@ -17,9 +17,13 @@ import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mytodo_app.R;
 import com.example.mytodo_app.provider.MyToDo;
 import com.example.mytodo_app.utils.CommonUtils;
 import com.example.mytodo_app.utils.Constant;
@@ -83,9 +87,20 @@ public class OnAlarmReceiver extends BroadcastReceiver {
    * @param description description of task
    */
   private void showAlarmDialog(Context context, final long taskId, final String name, final String description) {
+    LayoutInflater li = LayoutInflater.from(context);
+    View customDialog = li.inflate(R.layout.alarm_custom_dialog, null);
+    
     AlertDialog.Builder builder = new AlertDialog.Builder(context);
+    builder.setView(customDialog);
+    
+    final TextView taskName = (TextView) customDialog.findViewById(R.id.alarm_name);
+    final TextView taskDescription = (TextView) customDialog.findViewById(R.id.alarm_description);
+    
+    taskName.setText(name);
+    taskDescription.setText(description);
+    
     builder.setTitle("MyToDo Reminder");
-    builder.setMessage(description);
+//    builder.setMessage(description);
     builder.setNegativeButton("Sleep", new OnClickListener() {
 
       @Override
